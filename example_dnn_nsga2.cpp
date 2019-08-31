@@ -153,7 +153,7 @@ public:
                 indiv.nn().step(inputs[i]);
             const std::vector<float> &outf = indiv.nn().get_outf();
             _behavior[i] = outf[0];
-            fit -= std::powf(outf[0] - outputs[i], 2.0);
+            fit -= std::pow(outf[0] - outputs[i], 2.0);
         }
         this->_objs[0] = fit;
         this->_value = fit;
@@ -165,7 +165,7 @@ public:
         assert(_behavior.size() == 4);
         double d = 0;
         for (size_t i = 0; i < _behavior.size(); ++i)
-            d += std::powf(_behavior[i] - ind.fit()._behavior[i], 2.0);
+            d += std::pow(_behavior[i] - ind.fit()._behavior[i], 2.0);
         return d;
     }
 private:
