@@ -96,15 +96,16 @@ namespace nn2 {
       const int nb_inputs = NbInputs + 1; // bias is an input
       const int nb_outputs = NbOutputs;
       const int nb_hidden = NbHidden;
-      const int nb_params =
+      const int nb_weights =
         nb_inputs * nb_hidden // input to hidden (full)
         + nb_hidden * nb_outputs // hidden to output (full)
         + nb_outputs; // bias outputs
+      const int nb_biases = NbInputs + NbHidden + NbOutputs;
     };
 
   }
   // a basic MLP with float weights
-  typedef Mlp<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > mlp_t;
+//  typedef Mlp<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > mlp_t;
 
 }
 

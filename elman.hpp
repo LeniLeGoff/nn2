@@ -60,6 +60,8 @@ namespace nn2 {
     typedef N neuron_t;
     typedef C conn_t;
 
+    Elman(){}
+
     Elman(size_t nb_inputs,
           size_t nb_hidden,
           size_t nb_outputs) {
@@ -118,7 +120,7 @@ namespace nn2 {
       const int nb_inputs = NbInputs + 1; // bias is an input
       const int nb_outputs = NbOutputs;
       const int nb_hidden = NbHidden;
-      const int nb_params =
+      const int nb_weights =
         nb_inputs * nb_hidden // input to hidden (full)
         + nb_hidden * nb_outputs // hidden to output (full)
         + nb_hidden // hidden to context (1-1)
@@ -126,6 +128,7 @@ namespace nn2 {
         + nb_hidden * nb_hidden // context to hidden (full)
         + nb_hidden // bias context
         + nb_outputs; // bias outputs
+      const int nb_biases = NbInputs + NbHidden + NbOutputs;
     };
 
   }

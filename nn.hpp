@@ -119,7 +119,7 @@ namespace nn2 {
       _outputs.resize(o.get_nb_outputs());
       _outf.resize(o.get_nb_outputs());
       _init_io();
-      _init_done = false;
+      _init_done = o._init_done;
       return *this;
     }
     // init

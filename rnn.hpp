@@ -74,13 +74,13 @@ namespace nn2 {
                          trait<typename N::weight_t>::zero());
       this->full_connect(this->_hidden_neurons, this->_outputs,
                          trait<typename N::weight_t>::zero());
-      this->full_connect(this->_hidden_neurons,this->hidden_neurons,
+      this->full_connect(this->_hidden_neurons,this->_hidden_neurons,
                          trait<typename N::weight_t>::zero());
-      this->full_connect(this->inputs,this->outputs,
+      this->full_connect(this->_inputs,this->_outputs,
                          trait<typename N::weight_t>::zero());
-      this->full_connect(this->inputs,this->inputs,
+      this->full_connect(this->_inputs,this->_inputs,
                          trait<typename N::weight_t>::zero());
-      this->full_connect(this->outputs,this->outputs,
+      this->full_connect(this->_outputs,this->_outputs,
                          trait<typename N::weight_t>::zero());
 
 
@@ -108,7 +108,7 @@ namespace nn2 {
       const int nb_inputs = NbInputs + 1; // bias is an input
       const int nb_outputs = NbOutputs;
       const int nb_hidden = NbHidden;
-      const int nb_params =
+      const int nb_weights =
         nb_inputs * nb_hidden // input to hidden (full)
         + nb_hidden * nb_outputs // hidden to output (full)
         + nb_hidden // hidden to context (1-1)
@@ -116,12 +116,14 @@ namespace nn2 {
         + nb_hidden * nb_hidden // context to hidden (full)
         + nb_hidden // bias context
         + nb_outputs; // bias outputs
+      const int nb_biases = NbInputs + NbHidden + NbOutputs;
+
     };
 
   }
 
   // a basic Rnn with double weights
-  typedef Rnn<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > rnn_t;
+  //typedef Rnn<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > rnn_t;
 
 }
 
