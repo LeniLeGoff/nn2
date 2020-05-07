@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -39,13 +40,13 @@
 
 #include "trait.hpp"
 
-namespace nn {
+namespace nn2 {
 
   // generic neuron
   // Pot : potential functor (see pf.hpp)
   // Act : activation functor (see af.hpp)
   // IO : type of coupling between "neurons" (float or std::pair<float, float>)
-  template<typename Pot, typename Act, typename IO = float>
+  template<typename Pot, typename Act, typename IO = double>
   class Neuron {
    public:
     typedef typename Pot::weight_t weight_t;
@@ -70,7 +71,7 @@ namespace nn {
     }
     io_t activate() {
       if (!_fixed)
-        _next_output = _af(_pf(_inputs));
+        _next_output = _af(_pf(_inputs) + _bias);
       return _next_output;
     }
 
@@ -109,6 +110,10 @@ namespace nn {
     }
     void set_pfparams(const typename pf_t::params_t& p) {
       _pf.set_params(p);
+    }
+
+    void set_bias(const io_t& b){
+        _bias = b;
     }
 
     void step() {
@@ -193,10 +198,13 @@ namespace nn {
     boost::default_color_type _color;
     int _index;
    protected:
+
     // activation functor
     Act _af;
     // potential functor
     Pot _pf;
+    // bias
+    io_t _bias;
     // outputs
     io_t _current_output;
     io_t _next_output;

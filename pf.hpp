@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -42,8 +43,8 @@
 #include "trait.hpp"
 
 // potential functions (weighted sum, leaky integrator, etc.)
-namespace nn {
-  template<typename W = float, typename P = params::Dummy>
+namespace nn2 {
+  template<typename W = double, typename P = params::Dummy>
   class Pf {
    public:
     typedef P params_t;
@@ -80,7 +81,7 @@ namespace nn {
     std::valarray<W> _weights;
   };
 
-  template<typename W = float>
+  template<typename W = double>
   struct PfWSum : public Pf<W> {
     typedef params::Dummy params_t;
     typedef W weight_t;
@@ -89,7 +90,7 @@ namespace nn {
       for (size_t i = 0; i < this->_weights.size(); ++i)
         _w_cache[i] = trait<weight_t>::single_value(this->_weights[i]);
     }
-    float operator() (const trait<float>::vector_t & inputs) const {
+    float operator() (const trait<double>::vector_t & inputs) const {
       assert(inputs.size() == _w_cache.size());
       //std::cout<<"in:"<<inputs.transpose()<<" w:"<<_w_cache.transpose()<<"=>"<<
       //_w_cache.dot(inputs)<<std::endl;
@@ -103,7 +104,7 @@ namespace nn {
 #endif
     }
    protected:
-    trait<float>::vector_t _w_cache;
+    trait<double>::vector_t _w_cache;
   };
 
 

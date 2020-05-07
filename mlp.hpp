@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -32,9 +33,6 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-
-
-
 #ifndef _NN_MLP_HPP_
 #define _NN_MLP_HPP_
 
@@ -42,14 +40,14 @@
 #include "connection.hpp"
 #include "neuron.hpp"
 
-namespace nn {
+namespace nn2 {
   // a basic multi-layer perceptron (feed-forward neural network)
   // only one hidden layer in this version
   // there's one autmatically added input for the bias
   template<typename N, typename C>
   class Mlp : public NN<N, C> {
    public:
-    typedef nn::NN<N, C> nn_t;
+    typedef NN<N, C> nn_t;
     typedef typename nn_t::io_t io_t;
     typedef typename nn_t::vertex_desc_t vertex_desc_t;
     typedef typename nn_t::edge_desc_t edge_desc_t;
@@ -57,10 +55,13 @@ namespace nn {
     typedef typename nn_t::graph_t graph_t;
     typedef N neuron_t;
     typedef C conn_t;
+    Mlp(){}
 
     Mlp(size_t nb_inputs,
         size_t nb_hidden,
         size_t nb_outputs) {
+        std::cout << "Constructing an MLP" << std::endl;
+
       // neurons
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
@@ -89,9 +90,21 @@ namespace nn {
    protected:
     std::vector<vertex_desc_t> _hidden_neurons;
   };
+  namespace mlp {
+    template<int NbInputs, int NbHidden, int NbOutputs>
+    struct Count {
+      const int nb_inputs = NbInputs + 1; // bias is an input
+      const int nb_outputs = NbOutputs;
+      const int nb_hidden = NbHidden;
+      const int nb_params =
+        nb_inputs * nb_hidden // input to hidden (full)
+        + nb_hidden * nb_outputs // hidden to output (full)
+        + nb_outputs; // bias outputs
+    };
 
+  }
   // a basic MLP with float weights
-  typedef Mlp<Neuron<PfWSum<>, AfSigmoidNoBias<> >, Connection<> > mlp_t;
+  typedef Mlp<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > mlp_t;
 
 }
 

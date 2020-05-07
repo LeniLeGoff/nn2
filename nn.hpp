@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -62,7 +63,7 @@
 #include "neuron.hpp"
 #include "connection.hpp"
 
-namespace nn {
+namespace nn2 {
   // a useful boost functor
   template<typename V>
   class bfs_pred_visitor : public boost::default_bfs_visitor {
@@ -116,6 +117,7 @@ namespace nn {
       _outputs.clear();
       _inputs.resize(o.get_nb_inputs());
       _outputs.resize(o.get_nb_outputs());
+      _outf.resize(o.get_nb_outputs());
       _init_io();
       _init_done = false;
       return *this;
@@ -190,14 +192,14 @@ namespace nn {
       assert(num_vertices(_g) == pfs.size());
       size_t k = 0;
       BGL_FORALL_VERTICES_T(v, _g, graph_t)
-      _g[v].set_pfparamst(pfs[k++]);
+      _g[v].set_pfparams(pfs[k++]);
     }
 
     void set_all_afparams(const std::vector<typename af_t::params_t>& afs) {
       assert(num_vertices(_g) == afs.size());
       size_t k = 0;
       BGL_FORALL_VERTICES_T(v, _g, graph_t)
-      _g[v].set_afparamst(afs[k++]);
+      _g[v].set_afparams(afs[k++]);
     }
 
     void set_all_weights(const std::vector<weight_t>& ws) {
@@ -214,6 +216,23 @@ namespace nn {
       BGL_FORALL_EDGES_T(e, _g, graph_t)
       _g[e].set_weight(ws[k++]);
     }
+
+    void set_all_biases(const std::vector<typename N::io_t>& bs) {
+#ifndef NDEBUG
+      if (num_vertices(_g) != bs.size())
+        std::cout << "param errors: "
+                  << num_vertices(_g)
+                  << " whereas "
+                  << bs.size()
+                  << " provided" <<std::endl;
+#endif
+      assert(num_vertices(_g) == bs.size());
+      size_t k = 0;
+      BGL_FORALL_VERTICES_T(v, _g, graph_t)
+      _g[v].set_bias(bs[k++]);
+    }
+
+
 
     void set_nb_inputs(unsigned i) {
       _inputs.resize(i);
@@ -285,7 +304,13 @@ namespace nn {
       return std::find(_inputs.begin(), _inputs.end(), v) != _inputs.end();
     }
 
-    // step
+    //full activation
+    void activate(const std::vector<io_t>& inputs)
+    {
+
+    }
+
+    // step activation
     void step(const std::vector<io_t>& inputs) {
       _step(inputs);
     }
@@ -408,7 +433,7 @@ namespace nn {
       // out
       BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
         std::set<vertex_desc_t> preds;
-        nn::bfs_pred_visitor<vertex_desc_t> vis(preds);
+        bfs_pred_visitor<vertex_desc_t> vis(preds);
         breadth_first_search(boost::make_reverse_graph(_g),
                              v, color_map(get(&N::_color, _g)).visitor(vis));
         out_preds.insert(preds.begin(), preds.end());
@@ -417,7 +442,7 @@ namespace nn {
       if (simplify_in)
         BOOST_FOREACH(vertex_desc_t v, this->_inputs) {
         std::set<vertex_desc_t> succs;
-        nn::bfs_pred_visitor<vertex_desc_t> vis(succs);
+        bfs_pred_visitor<vertex_desc_t> vis(succs);
         breadth_first_search(_g,
                              v, color_map(get(&N::_color, _g)).visitor(vis));
         in_succs.insert(succs.begin(), succs.end());

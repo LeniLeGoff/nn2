@@ -1,5 +1,5 @@
-//| This file is a part of the sferes2 framework.
-//| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.//| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
 //| This software is a computer program whose purpose is to facilitate
@@ -37,8 +37,8 @@
 
 #include "params.hpp"
 
-namespace nn {
-  template<typename W = float, typename IO = float>
+namespace nn2 {
+  template<typename W = double, typename IO = double>
   struct Connection {
     typedef W weight_t;
     typedef IO io_t;

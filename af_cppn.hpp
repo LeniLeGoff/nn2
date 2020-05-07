@@ -38,15 +38,16 @@
 #ifndef AF_CPPN_HPP_
 #define AF_CPPN_HPP_
 
-#include <sferes/gen/sampled.hpp>
+
+/*#include <sferes/gen/sampled.hpp>
 #include <sferes/gen/evo_float.hpp>
 
 // classic activation functions
-namespace nn {
+namespace nn2 {
   namespace cppn {
     enum func_e { sine = 0, sigmoid, gaussian, linear };
-    SFERES_CONST size_t nb_functions = 3;
-    SFERES_CLASS(AfParams) {
+    const size_t nb_functions = 3;
+    class AfParams {
     public:
       void set(float t, float p) {
         _type.set_data(0, t);
@@ -106,5 +107,5 @@ namespace nn {
 
 
 }
-
+*/
 #endif

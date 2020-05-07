@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -41,6 +42,7 @@
 // for std::pair
 #include <map>
 #include <valarray>
+#include <Eigen/Core>
 
 #ifdef EIGEN3_ENABLED
 #include <Eigen/Core>
@@ -48,7 +50,7 @@
 
 #include "params.hpp"
 
-namespace nn {
+namespace nn2 {
   template<typename T>
   struct trait {
     static T zero() {
@@ -86,7 +88,26 @@ namespace nn {
   };
 
 
-  // go with eigen with float (TODO : double)
+  // go with eigen with double
+  template<>
+  struct trait<double> {
+    typedef Eigen::VectorXd vector_t;
+    static float zero() {
+      return 0.0f;
+    }
+    static vector_t zero(size_t k) {
+      return Eigen::VectorXd::Zero(k);
+    }
+    static float single_value(const float& t) {
+      return t;
+    }
+    static size_t size(const float& t) {
+      return 1;
+    }
+  };
+
+
+  // go with eigen with float
   template<>
   struct trait<float> {
     typedef Eigen::VectorXf vector_t;

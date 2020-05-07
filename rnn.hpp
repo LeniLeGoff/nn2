@@ -33,23 +33,19 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-
-
-
-#ifndef _NN_ELMAN_HPP_
-#define _NN_ELMAN_HPP_
+#ifndef _NN_RNN_HPP_
+#define _NN_RNN_HPP_
 
 #include "nn.hpp"
+#include "connection.hpp"
+#include "neuron.hpp"
 
 namespace nn2 {
-  // a "modified" Elman network with self-recurrent context units
-  // E.g. : Training Elman and Jordan networks for system
-  // identification using genetic algorithms
-  // Artificial Intelligence in Engineering
-  // Volume 13, Issue 2, April 1999, Pages 107-117
-  // first input is a BIAS input (it should be set to 1)
+  // a fully connected recurrent neural network
+  // only one hidden layer in this version
+  // there's one autmatically added input for the bias
   template<typename N, typename C>
-  class Elman : public NN<N, C> {
+  class Rnn : public NN<N, C> {
    public:
     typedef NN<N, C> nn_t;
     typedef typename nn_t::io_t io_t;
@@ -59,42 +55,38 @@ namespace nn2 {
     typedef typename nn_t::graph_t graph_t;
     typedef N neuron_t;
     typedef C conn_t;
+    Rnn(){}
 
-    Elman(size_t nb_inputs,
-          size_t nb_hidden,
-          size_t nb_outputs) {
-      std::cout << "Contructing an Elman network" << std::endl;
+    Rnn(size_t nb_inputs,
+        size_t nb_hidden,
+        size_t nb_outputs) {
+        std::cout << "Constructing a fully connected RNN" << std::endl;
 
-        // neurons
+      // neurons
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
       for (size_t i = 0; i < nb_hidden; ++i)
         _hidden_neurons.
-        push_back(this->add_neuron(std::string("h")
-                                   + boost::lexical_cast<std::string>(i)));
-      for (size_t i = 0; i < nb_hidden; ++i)
-        _context_neurons.
-        push_back(this->add_neuron(std::string("c")
-                                   + boost::lexical_cast<std::string>(i)));
-      // connections
+        push_back(this->add_neuron(std::string("h") + boost::lexical_cast<std::string>(i)));
+
+      // connections : all neurons connected to each others apart from outputs not connected to inputs.
       this->full_connect(this->_inputs, this->_hidden_neurons,
                          trait<typename N::weight_t>::zero());
       this->full_connect(this->_hidden_neurons, this->_outputs,
                          trait<typename N::weight_t>::zero());
-      this->connect(this->_hidden_neurons, this->_context_neurons,
-                    trait<typename N::weight_t>::zero());
-      this->connect(this->_context_neurons, this->_context_neurons,
-                    trait<typename N::weight_t>::zero());
-      this->full_connect(this->_context_neurons, this->_hidden_neurons,
+      this->full_connect(this->_hidden_neurons,this->hidden_neurons,
                          trait<typename N::weight_t>::zero());
-      // bias
-      // (hidden layer is already connect to input(0))
-      size_t last = this->get_nb_inputs();
-      for (size_t i = 0; i < _context_neurons.size(); ++i)
-        this->add_connection(this->get_input(last), _context_neurons[i],
-                             trait<typename N::weight_t>::zero());
-      for (size_t i = 0; i < this->get_nb_outputs(); ++i)
-        this->add_connection(this->get_input(last), this->get_output(i),
+      this->full_connect(this->inputs,this->outputs,
+                         trait<typename N::weight_t>::zero());
+      this->full_connect(this->inputs,this->inputs,
+                         trait<typename N::weight_t>::zero());
+      this->full_connect(this->outputs,this->outputs,
+                         trait<typename N::weight_t>::zero());
+
+
+      // bias outputs too
+      for (size_t i = 0; i < nb_outputs; ++i)
+        this->add_connection(this->get_input(nb_inputs), this->get_output(i),
                              trait<typename N::weight_t>::zero());
     }
     unsigned get_nb_inputs() const {
@@ -107,12 +99,10 @@ namespace nn2 {
       nn_t::_step(inf);
     }
    protected:
-
     std::vector<vertex_desc_t> _hidden_neurons;
-    std::vector<vertex_desc_t> _context_neurons;
-
   };
-  namespace elman {
+
+  namespace rnn {
     template<int NbInputs, int NbHidden, int NbOutputs>
     struct Count {
       const int nb_inputs = NbInputs + 1; // bias is an input
@@ -129,6 +119,10 @@ namespace nn2 {
     };
 
   }
+
+  // a basic Rnn with double weights
+  typedef Rnn<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > rnn_t;
+
 }
 
 #endif

@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -38,7 +39,7 @@
 #include "params.hpp"
 
 // classic activation functions
-namespace nn {
+namespace nn2 {
   template <typename P = params::Dummy>
   class Af {
    public:
@@ -62,48 +63,58 @@ namespace nn {
   template <typename P>
   struct AfTanh : public Af<P> {
     typedef P params_t;
-    BOOST_STATIC_CONSTEXPR float lambda = 5.0f;
+    BOOST_STATIC_CONSTEXPR double lambda = 5.0f;
     AfTanh() {
       assert(trait<P>::size(this->_params) == 1);
     }
-    float operator()(float p) const {
+    float operator()(double p) const {
       return tanh(p * lambda + trait<P>::single_value(this->_params));
     }
    protected:
   };
   // -1 to +1 sigmoid
-  template <typename P = float>
+  template <typename P = double>
   struct AfTanhNoBias : public Af<P> {
     typedef params::Dummy params_t;
     BOOST_STATIC_CONSTEXPR float lambda = 5.0f;
     AfTanhNoBias() { }
-    float operator()(float p) const {
+    float operator()(double p) const {
       return tanh(p * lambda);
     }
   };
 
 
 
-  template <typename P = float>
-  struct AfSigmoidNoBias : public Af<> {
+  template <typename P = double>
+  struct AfSigmoid : public Af<> {
     typedef params::Dummy params_t;
-    BOOST_STATIC_CONSTEXPR float lambda = 5.0f;
-    AfSigmoidNoBias() { }
-    float operator()(float p) const {
-      return 1.0 / (exp(-p * lambda) + 1);
+    AfSigmoid() { }
+    float operator()(double p) const {
+      return 1.0 / (exp(-p) + 1);
     }
    protected:
   };
 
-  template <typename P = float>
+  template <typename P = std::vector<double>>
   struct AfSigmoidBias : public Af<P> {
     typedef P params_t;
-    BOOST_STATIC_CONSTEXPR float lambda = 5.0f;
     AfSigmoidBias() {
-      assert(this->_params.size() == 1);
+      assert(this->_params.size() == 2);
     }
-    float operator()(float p) const {
-      return 1.0 / (exp(-p + trait<P>::single_value(this->_params) * lambda) + 1);
+    float operator()(double p) const {
+      return 1.0 / (exp(-p * this->_params[0] + this->_params[1]) + 1);
+    }
+   protected:
+  };
+
+  template <typename P = std::vector<double>>
+  struct AfSigmoidSigned : public Af<P> {
+    typedef P params_t;
+    AfSigmoidSigned() {
+      //assert(this->_params.size() == 2);
+    }
+    float operator()(double p) const {
+      return (1.0 / (exp(-p * this->_params[0] + this->_params[1]) + 1) - 0.5f)*2.f;
     }
    protected:
   };
@@ -113,7 +124,7 @@ namespace nn {
   template<typename P = params::Dummy>
   struct AfDirect : public Af<P> {
     typedef P params_t;
-    float operator()(float p) const {
+    float operator()(double p) const {
       return p;
     }
   };

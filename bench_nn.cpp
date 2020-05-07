@@ -36,8 +36,8 @@
 #include "nn.hpp"
 
 int main() {
-  using namespace nn;
-  typedef NN<Neuron<PfWSum<>, AfTanh<float> >, Connection<> > nn_t;
+  using namespace nn2;
+  typedef NN<Neuron<PfWSum<>, AfTanh<double> >, Connection<> > nn_t;
 
   nn_t nn;
 
@@ -59,11 +59,16 @@ int main() {
     for (size_t j = 0; j < neurons.size(); ++j)
       nn.add_connection(neurons[j], nn.get_output(i), 0.20f);
 
-  std::vector<float> in(nn.get_nb_inputs());
+  std::vector<double> in(nn.get_nb_inputs());
   nn.init();
   std::fill(in.begin(), in.end(), 1.0f);
   size_t nb_steps = 50000;
   for (size_t i = 0; i < nb_steps; ++i)
     nn.step(in);
+
+  for(double o : nn.outf())
+      std::cout << o << ",";
+  std::cout << std::endl;
+
   return 0;
 }

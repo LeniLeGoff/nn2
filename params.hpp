@@ -1,4 +1,5 @@
-//| This file is a part of the sferes2 framework.
+//| This file is a part of the sferes2 framework. //| This file is a part of the nn2 module originally made for the sferes2 framework.
+//| Adapted and modified to be used within the ARE framework by Léni Le Goff.
 //| Copyright 2009, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s): Jean-Baptiste Mouret, mouret@isir.fr
 //|
@@ -34,7 +35,7 @@
 
 #ifndef _NN_PARAMS_HPP_
 #define _NN_PARAMS_HPP_
-namespace nn {
+namespace nn2 {
   namespace params {
     struct Dummy {
       friend inline std::ostream& operator<<(std::ostream& output, const Dummy& e);
