@@ -108,6 +108,34 @@ namespace nn2 {
   };
 
 
+  template<>
+  struct PfWSum<double> : public Pf<double> {
+    typedef params::Dummy params_t;
+
+    void init() {
+      _w_cache.resize(this->_weights.size());
+      for (size_t i = 0; i < this->_weights.size(); ++i)
+        _w_cache(i) = this->_weights[i];
+    }
+    float operator() (const trait<double>::vector_t & inputs) const {
+      assert(inputs.size() == _w_cache.size());
+      //std::cout<<"in:"<<inputs.transpose()<<" w:"<<_w_cache.transpose()<<"=>"<<
+      //_w_cache.dot(inputs)<<std::endl;
+      if (inputs.size() == 0)
+        return 0.0f;
+#ifdef EIGEN3_ENABLED
+      return _w_cache.dot(inputs);
+#else
+#warning "No EIGEN3 -> no vectorization of pwfsum"
+      return (_w_cache * inputs).sum();
+#endif
+    }
+   protected:
+     Eigen::VectorXd _w_cache;
+  };
+
+
+
 
   // Ijsspert's coupled non-linear oscillators
   // see : Learning to Move in Modular Robots using Central Pattern
