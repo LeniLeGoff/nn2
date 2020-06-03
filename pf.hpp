@@ -96,12 +96,8 @@ namespace nn2 {
       //_w_cache.dot(inputs)<<std::endl;
       if (inputs.size() == 0)
         return 0.0f;
-#ifdef EIGEN3_ENABLED
       return _w_cache.dot(inputs);
-#else
-#warning "No EIGEN3 -> no vectorization of pwfsum"
-      return (_w_cache * inputs).sum();
-#endif
+
     }
    protected:
     trait<double>::vector_t _w_cache;
@@ -123,12 +119,8 @@ namespace nn2 {
       //_w_cache.dot(inputs)<<std::endl;
       if (inputs.size() == 0)
         return 0.0f;
-#ifdef EIGEN3_ENABLED
       return _w_cache.dot(inputs);
-#else
-#warning "No EIGEN3 -> no vectorization of pwfsum"
-      return (_w_cache * inputs).sum();
-#endif
+
     }
    protected:
      Eigen::VectorXd _w_cache;
