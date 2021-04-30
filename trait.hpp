@@ -49,123 +49,162 @@
 #endif
 
 #include "params.hpp"
+#include "evo_float.hpp"
 
 namespace nn2 {
-  template<typename T>
-  struct trait {
+template<typename T>
+struct trait {
     static T zero() {
-      return T(0.0f);
+        return T(0.0f);
     }
     // a 0 initializer for vectors
     static T zero(size_t k) {
-      return zero();
+        return zero();
     }
     typedef std::valarray<T> vector_t;
     static size_t size(const T& t) {
-      return t.size();
+        return t.size();
     }
     static typename T::type_t single_value(const T& t) {
-      assert(t.size() == 1);
-      return t.data(0);
+        assert(t.size() == 1);
+        return t.data(0);
     }
-  };
+};
 
-  template<>
-  struct trait<params::Dummy> {
+template<int Size, typename Params>
+struct trait<EvoFloat<Size, Params>>{
+    typedef EvoFloat<Size, Params> evo_float_t;
+    static std::vector<float> zero() {
+        return std::vector<float>(Size,0.0f);
+    }
+    // a 0 initializer for vectors
+    static std::vector<float> zero(size_t k) {
+        return zero();
+    }
+    typedef std::valarray<float> vector_t;
+    static size_t size(const evo_float_t&) {
+        return Size;
+    }
+    static std::vector<float> single_value(const evo_float_t& t) {
+        return t.data();
+    }
+};
+
+template<typename Params>
+struct trait<EvoFloat<1, Params>>{
+    typedef EvoFloat<1, Params> evo_float_t;
+    static float zero() {
+        return 0.0f;
+    }
+    // a 0 initializer for vectors
+    static float zero(size_t k) {
+        return zero();
+    }
+    static size_t size(const evo_float_t&) {
+        return 1;
+    }
+    static float single_value(const evo_float_t& t) {
+        return t.data(0)    ;
+    }
+};
+
+
+template<>
+struct trait<params::Dummy> {
     typedef std::valarray<float> vector_t;
     static float zero() {
-      return 0.0f;
+        return 0.0f;
     }
     static float zero(size_t k) {
-      return zero();
+        return zero();
     }
     static float single_value(const params::Dummy& t) {
-      return 0.0f;
+        return 0.0f;
     }
     static size_t size(const params::Dummy&) {
-      return 0;
+        return 0;
     }
-  };
+};
 
 
-  // go with eigen with double
-  template<>
-  struct trait<double> {
+// go with eigen with double
+template<>
+struct trait<double> {
     typedef Eigen::VectorXd vector_t;
     static float zero() {
-      return 0.0f;
+        return 0.0f;
     }
     static vector_t zero(size_t k) {
-      return Eigen::VectorXd::Zero(k);
+        return Eigen::VectorXd::Zero(k);
     }
     static float single_value(const float& t) {
-      return t;
+        return t;
     }
     static size_t size(const float& t) {
-      return 1;
+        return 1;
     }
-  };
+};
 
 
-  // go with eigen with float
-  template<>
-  struct trait<float> {
+// go with eigen with float
+template<>
+struct trait<float> {
     typedef Eigen::VectorXf vector_t;
     static float zero() {
-      return 0.0f;
+        return 0.0f;
     }
     static vector_t zero(size_t k) {
-      return Eigen::VectorXf::Zero(k);
+        return Eigen::VectorXf::Zero(k);
     }
     static float single_value(const float& t) {
-      return t;
+        return t;
     }
     static size_t size(const float& t) {
-      return 1;
+        return 1;
     }
-  };
+};
 
-  template<>
-  struct trait<std::pair<float, float> > {
+template<>
+struct trait<std::pair<float, float> > {
     typedef std::valarray<std::pair<float, float> > vector_t;
     static std::pair<float, float> zero() {
-      return std::make_pair(0.0f, 0.0f);
+        return std::make_pair(0.0f, 0.0f);
     }
     static std::pair<float, float> zero(size_t k) {
-      return zero();
+        return zero();
     }
     static float single_value(const std::pair<float, float>& t) {
-      return t.first;
+        return t.first;
     }
     static size_t size(const std::pair<float, float>& t) {
-      return 2;
+        return 2;
     }
-  };
+};
 
-  // useful but wrong place (?)
-  template<typename _CharT, typename _Traits>
-  static std::basic_ostream<_CharT, _Traits>&
-  operator<<(std::basic_ostream<_CharT, _Traits>& ofs, const std::pair<float, float>& p) {
+// useful but wrong place (?)
+template<typename _CharT, typename _Traits>
+static std::basic_ostream<_CharT, _Traits>&
+operator<<(std::basic_ostream<_CharT, _Traits>& ofs, const std::pair<float, float>& p) {
     return ofs<<p.first<<" "<<p.second;
-  }
+}
 
-  template<typename _CharT, typename _Traits>
-  static std::basic_ostream<_CharT, _Traits>&
-  operator<<(std::basic_ostream<_CharT, _Traits>& ofs, const std::vector<float>& p) {
+template<typename _CharT, typename _Traits>
+static std::basic_ostream<_CharT, _Traits>&
+operator<<(std::basic_ostream<_CharT, _Traits>& ofs, const std::vector<float>& p) {
     for (size_t i = 0; i < p.size(); ++i)
-      ofs<<p[i]<<" ";
+        ofs<<p[i]<<" ";
     return ofs;
-  }
+}
 
 
-  template<typename T1, typename T2>
-  static std::istream& operator>>(std::istream& ifs, std::pair<T1, T2>& p) {
+template<typename T1, typename T2>
+static std::istream& operator>>(std::istream& ifs, std::pair<T1, T2>& p) {
     T1 t1;
     T2 t2;
     ifs >> t1;
     ifs >> t2;
     return std::make_pair(t1, t2);
-  }
+}
 
 }
 

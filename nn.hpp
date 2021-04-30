@@ -13,7 +13,7 @@
 //| following URL "http://www.cecill.info".
 //|
 //| As a counterpart to the access to the source code and rights to
-//| copy, modify and redistribute granted by the license, users are
+//| copy, modify and redistribute gted by the license, users are
 //| provided only with a limited warranty and the software's author,
 //| the holder of the economic rights, and the successive licensors
 //| have only limited liability.
@@ -64,6 +64,8 @@
 #include "connection.hpp"
 
 namespace nn2 {
+
+
   // a useful boost functor
   template<typename V>
   class bfs_pred_visitor : public boost::default_bfs_visitor {
@@ -519,8 +521,11 @@ namespace nn2 {
 
       in_edge_it_t in, in_end;
       unsigned i = 0;
-      for (tie(in, in_end) = in_edges(n, _g); in != in_end; ++in, ++i)
-        _g[n].set_input(i, _g[source(*in, _g)].get_current_output());
+      for (tie(in, in_end) = in_edges(n, _g); in != in_end; ++in, ++i){
+          if(i >= _g[n].get_inputs().size())
+              break;
+          _g[n].set_input(i, _g[source(*in, _g)].get_current_output());
+      }
 
       _g[n].activate();
     }

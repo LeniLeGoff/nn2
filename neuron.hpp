@@ -88,7 +88,7 @@ namespace nn2 {
       assert(i < _inputs.size());
       _inputs[i] = in;
     }
-
+    const typename trait<io_t>::vector_t &get_inputs(){return _inputs;}
     void set_weight(unsigned i, const weight_t& w) {
       _pf.set_weight(i, w);
     }
