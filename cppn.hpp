@@ -6,11 +6,13 @@
 #include "random.hpp"
 #include <random>
 
+using namespace boost;
+
 namespace nn2{
 
 namespace cppn{
 
-typedef EvoFloat<1,evo_float::default_params> evo_float_t;
+typedef nn2::EvoFloat<1,evo_float::default_params> evo_float_t;
 
 struct Params : params::Dummy{
     int type;
@@ -71,7 +73,7 @@ struct AfCppn : public Af<cppn::Params> {
 
 
 template <typename Params>
-class CPPN : public NN<Neuron<PfWSum<EvoFloat<1,evo_float::default_params>>,AfCppn>, Connection<EvoFloat<1,evo_float::default_params>>>
+class CPPN : public NN<Neuron<PfWSum<cppn::evo_float_t>,AfCppn>, Connection<cppn::evo_float_t>>
 {
 public:
 
@@ -102,8 +104,7 @@ public:
         // conns
         size_t nb_conns = std::uniform_int_distribution<>(Params::_min_nb_conns, Params::_max_nb_conns)(rgen_t::gen);
         for (size_t i = 0; i < nb_conns; ++i)
-          _add_conn();
-
+            _add_conn();
         this->simplify();
     }
 
@@ -128,6 +129,53 @@ public:
 
     }
 
+private:
+
+    template <class Graph>
+    typename boost::graph_traits<Graph>::vertex_descriptor
+    random_vertex(Graph& g) {
+        assert(num_vertices(g));
+        int nbv = num_vertices(g);
+        using namespace boost;
+        if (num_vertices(g) > 1) {
+            std::size_t n = std::uniform_int_distribution<>(0,num_vertices(g)-1)(rgen_t::gen);
+            typename graph_traits<Graph>::vertex_iterator i = vertices(g).first;
+            while (n-- > 0) ++i;
+            return *i;
+        } else
+            return *vertices(g).first;
+    }
+
+    template <class Graph>
+    typename boost::graph_traits<Graph>::edge_descriptor
+    random_edge(Graph& g) {
+        assert(num_edges(g));
+        using namespace boost;
+        if (num_edges(g) > 1) {
+            std::size_t n = std::uniform_int_distribution<>(0,num_edges(g)-1)(rgen_t::gen);
+            typename graph_traits<Graph>::edge_iterator i = edges(g).first;
+            while (n-- > 0) ++i;
+            return *i;
+        } else
+            return *edges(g).first;
+    }
+
+    vertex_desc_t _random_src(){
+        vertex_desc_t v;
+        do
+            v = random_vertex(this->_g);
+        while (this->is_output(v));
+        return v;
+    }
+
+    vertex_desc_t _random_tgt(){
+        vertex_desc_t v;
+        do
+            v = random_vertex(this->_g);
+        while (this->is_input(v));
+        return v;
+    }
+public:
     void _add_neuron(){
         vertex_desc_t n = add_neuron("n");
         this->_g[n].get_pfparams().random();
@@ -168,6 +216,19 @@ public:
 
     void _add_conn(){
         vertex_desc_t src, tgt;
+        size_t max_tries = num_vertices(this->_g) * num_vertices(this->_g),
+                nb_tries = 0;
+        do {
+            src = _random_src();
+            tgt = _random_tgt();
+        } while (src == tgt && ++nb_tries < max_tries);
+        weight_t w;
+        w.random();
+        this->add_connection(src, tgt, w);
+    }
+
+    void _add_conn_nodup(){
+        vertex_desc_t src, tgt;
         // this is only an upper bound; a connection might of course
         // be possible even after max_tries tries.
         size_t max_tries = num_vertices(this->_g) * num_vertices(this->_g),
@@ -175,7 +236,7 @@ public:
         do {
             src = _random_src();
             tgt = _random_tgt();
-        } while (is_adjacent(_g, src, tgt) && ++nb_tries < max_tries);
+        } while (src == tgt && is_adjacent(_g, src, tgt) && ++nb_tries < max_tries);
         if (nb_tries < max_tries) {
             weight_t w;
             w.random();
@@ -228,50 +289,7 @@ private:
     size_t _nb_inputs = 2;
     size_t _nb_outputs = 1;
 
-    template <class Graph>
-    typename boost::graph_traits<Graph>::vertex_descriptor
-    random_vertex(Graph& g) {
-        assert(num_vertices(g));
-        int nbv = num_vertices(g);
-        using namespace boost;
-        if (num_vertices(g) > 1) {
-            std::size_t n = std::uniform_int_distribution<>(0,num_vertices(g)-1)(rgen_t::gen);
-            typename graph_traits<Graph>::vertex_iterator i = vertices(g).first;
-            while (n-- > 0) ++i;
-            return *i;
-        } else
-            return *vertices(g).first;
-    }
 
-    template <class Graph>
-    typename boost::graph_traits<Graph>::edge_descriptor
-    random_edge(Graph& g) {
-        assert(num_edges(g));
-        using namespace boost;
-        if (num_edges(g) > 1) {
-            std::size_t n = std::uniform_int_distribution<>(0,num_edges(g)-1)(rgen_t::gen);
-            typename graph_traits<Graph>::edge_iterator i = edges(g).first;
-            while (n-- > 0) ++i;
-            return *i;
-        } else
-            return *edges(g).first;
-    }
-
-    vertex_desc_t _random_src(){
-        vertex_desc_t v;
-        do
-            v = random_vertex(this->_g);
-        while (this->is_output(v));
-        return v;
-    }
-
-    vertex_desc_t _random_tgt(){
-        vertex_desc_t v;
-        do
-            v = random_vertex(this->_g);
-        while (this->is_input(v));
-        return v;
-    }
 };
 
 

@@ -16,38 +16,42 @@ struct params{
     static size_t _max_nb_conns;
 };
 
-float params::_rate_add_neuron = 1.0;
-float params::_rate_del_neuron = 0.1;
-float params::_rate_add_conn = 1.0;
-float params::_rate_del_conn = 0.1;
+float params::_rate_add_neuron = 0;
+float params::_rate_del_neuron = 1.0;
+float params::_rate_add_conn = 0;
+float params::_rate_del_conn = 1;
 float params::_rate_change_conn = 0.5;
 
-size_t params::_min_nb_neurons = 2;
-size_t params::_max_nb_neurons = 30;
-size_t params::_min_nb_conns = 1;
-size_t params::_max_nb_conns = 100;
+size_t params::_min_nb_neurons = 10;
+size_t params::_max_nb_neurons = 100;
+size_t params::_min_nb_conns = 2;
+size_t params::_max_nb_conns = 10000;
 
 int main(int argc,char** argv){
 
     nn2::rgen_t::gen.seed(time(0));
 
 
-    nn2::CPPN<params> cppn;
+    nn2::CPPN<params> cppn(2,3);
+
 
     cppn.random();
     cppn.init();
 
-    cv::Mat image(400,400,CV_8UC1);
+    cv::Mat image(600,800,CV_8UC3);
     std::vector<double> outs;
     for(int k = 0; k < 10; k++){
         std::cout << "start" << std::endl;
-        for(int i = 0; i < 400; i++){
-            for(int j = 0; j < 400; j++){
+        for(int i = 0; i < 600; i++){
+            for(int j = 0; j < 800; j++){
                 float u = static_cast<float>(i)/200. - 1;
                 float v = static_cast<float>(j)/200. - 1;
                 cppn.step({12*u,12*v});
                 outs = cppn.outf();
+
                 image.at<uchar>(i,j,0) = 128*outs[0]+127;
+                image.at<uchar>(i,j,1) = 128*outs[1]+127;
+                image.at<uchar>(i,j,2) = 128*outs[2]+127;
             }
         }
         std::cout << "finish" << std::endl;

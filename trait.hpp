@@ -91,8 +91,8 @@ struct trait<EvoFloat<Size, Params>>{
 };
 
 template<typename Params>
-struct trait<EvoFloat<1, Params>>{
-    typedef EvoFloat<1, Params> evo_float_t;
+struct trait<nn2::EvoFloat<1, Params>>{
+    typedef nn2::EvoFloat<1, Params> evo_float_t;
     static float zero() {
         return 0.0f;
     }
