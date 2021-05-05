@@ -129,6 +129,86 @@ public:
 
     }
 
+        // serialize the graph "by hand"...
+              template<typename Archive>
+              void save(Archive& a, const unsigned v) const {
+    //            dbg::trace("cppn", DBG_HERE);
+                std::vector<int> inputs;
+                std::vector<int> outputs;
+                std::vector<typename neuron_t::af_t::params_t> afparams;
+                std::vector<typename neuron_t::pf_t::params_t> pfparams;
+                std::map<vertex_desc_t, int> nmap;
+                std::vector<std::pair<int, int> > conns;
+                std::vector<weight_t> weights;
+
+                BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
+                  if (this->is_input(v))
+                    inputs.push_back(afparams.size());
+                  if (this->is_output(v))
+                    outputs.push_back(afparams.size());
+                  nmap[v] = afparams.size();
+                  afparams.push_back(this->_g[v].get_afparams());
+                  pfparams.push_back(this->_g[v].get_pfparams());
+                }
+                BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
+                  conns.push_back(std::make_pair(nmap[source(e, this->_g)],
+                                                 nmap[target(e, this->_g)]));
+                  weights.push_back(this->_g[e].get_weight());
+                }
+                assert(pfparams.size() == afparams.size());
+                assert(weights.size() == conns.size());
+
+                a & BOOST_SERIALIZATION_NVP(afparams);
+                a & BOOST_SERIALIZATION_NVP(pfparams);
+                a & BOOST_SERIALIZATION_NVP(weights);
+                a & BOOST_SERIALIZATION_NVP(conns);
+                a & BOOST_SERIALIZATION_NVP(inputs);
+                a & BOOST_SERIALIZATION_NVP(outputs);
+              }
+              template<typename Archive>
+              void load(Archive& a, const unsigned v) {
+//                dbg::trace("nn", DBG_HERE);
+                std::vector<int> inputs;
+                std::vector<int> outputs;
+                std::vector<typename neuron_t::af_t::params_t> afparams;
+                std::vector<typename neuron_t::pf_t::params_t> pfparams;
+                std::map<size_t, vertex_desc_t> nmap;
+                std::vector<std::pair<int, int> > conns;
+                std::vector<weight_t> weights;
+
+                a & BOOST_SERIALIZATION_NVP(afparams);
+                a & BOOST_SERIALIZATION_NVP(pfparams);
+                a & BOOST_SERIALIZATION_NVP(weights);
+                a & BOOST_SERIALIZATION_NVP(conns);
+                a & BOOST_SERIALIZATION_NVP(inputs);
+                a & BOOST_SERIALIZATION_NVP(outputs);
+
+                assert(pfparams.size() == afparams.size());
+
+                assert(weights.size() == conns.size());
+                this->set_nb_inputs(inputs.size());
+                this->set_nb_outputs(outputs.size());
+                for (size_t i = 0; i < this->get_nb_inputs(); ++i)
+                  nmap[inputs[i]] = this->get_input(i);
+                for (size_t i = 0; i < this->get_nb_outputs(); ++i)
+                  nmap[outputs[i]] = this->get_output(i);
+
+                for (size_t i = 0; i < afparams.size(); ++i)
+                  if (std::find(inputs.begin(), inputs.end(), i) == inputs.end()
+                      && std::find(outputs.begin(), outputs.end(), i) == outputs.end())
+                    nmap[i] = this->add_neuron("n", pfparams[i], afparams[i]);
+                  else {
+                    this->_g[nmap[i]].set_pfparams(pfparams[i]);
+                    this->_g[nmap[i]].set_afparams(afparams[i]);
+                  }
+
+
+                //assert(nmap.size() == num_vertices(this->_g));
+                for (size_t i = 0; i < conns.size(); ++i)
+                  this->add_connection(nmap[conns[i].first], nmap[conns[i].second], weights[i]);
+              }
+              BOOST_SERIALIZATION_SPLIT_MEMBER();
+
 private:
 
     template <class Graph>
