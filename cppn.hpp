@@ -103,6 +103,9 @@ class CPPN : public NN<Neuron<PfWSum<cppn::evo_float_t>,AfCppn>, Connection<cppn
 public:
 
     CPPN(){}
+    CPPN(size_t nb_inputs, size_t nb_outputs) :
+        _nb_inputs(nb_inputs), _nb_outputs(nb_outputs)
+    {}
 
     void _random_neuron_params() {
         BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
