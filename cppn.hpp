@@ -5,6 +5,12 @@
 #include "evo_float.hpp"
 #include "random.hpp"
 #include <random>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/utility.hpp>
 
 using namespace boost;
 
@@ -14,8 +20,15 @@ namespace cppn{
 
 typedef nn2::EvoFloat<1,evo_float::default_params> evo_float_t;
 
-struct Params : params::Dummy{
-    int type;
+struct Params{
+    Params(){}
+    Params(const Params& p):
+        type(p.type),
+        p0(p.p0),
+        p1(p.p1)
+    {}
+
+    int type = -1;
     evo_float_t p0;
     evo_float_t p1;
 
@@ -28,6 +41,14 @@ struct Params : params::Dummy{
         p0.mutate();
         p1.mutate();
     }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & type;
+        ar & p0;
+        ar & p1;
+    }
+
 };
 enum{sine = 0, sigmoid, gaussian, linear};
 
@@ -51,9 +72,6 @@ struct default_params{
 struct AfCppn : public Af<cppn::Params> {
 
     float operator() (float p) const {
-        float s = p > 0 ? 1 : -1;
-        //std::cout<<"type:"<<this->_params.type()<<" p:"<<p<<" this:"<<this
-        //<< " out:"<< p * exp(-powf(p * 10/ this->_params.param(), 2))<<std::endl;
         switch (this->_params.type) {
         case cppn::sine:
             return sin(_params.p0.data(0)*p + _params.p1.data(0));
@@ -68,26 +86,29 @@ struct AfCppn : public Af<cppn::Params> {
         }
         return 0;
     }
+
+    void set_params(const params_t& p){
+        _params.type = p.type;
+        _params.p0 = p.p0;
+        _params.p1 = p.p1;
+    }
+
 };
 
 
 
-template <typename Params>
+template <typename Params = cppn::default_params>
 class CPPN : public NN<Neuron<PfWSum<cppn::evo_float_t>,AfCppn>, Connection<cppn::evo_float_t>>
 {
 public:
 
     CPPN(){}
-    CPPN(size_t nb_inputs, size_t nb_outputs) :
-        _nb_inputs(nb_inputs), _nb_outputs(nb_outputs)
-    {   set_nb_inputs(_nb_inputs);
-        set_nb_outputs(_nb_outputs);}
 
     void _random_neuron_params() {
-      BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
-        this->_g[v].get_pfparams().random();
-        this->_g[v].get_afparams().random();
-      }
+        BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
+            this->_g[v].get_pfparams().random();
+            this->_g[v].get_afparams().random();
+        }
     }
 
     void random(){
@@ -99,7 +120,7 @@ public:
         // neurons
         size_t nb_neurons = std::uniform_int_distribution<>(Params::_min_nb_neurons, Params::_max_nb_neurons)(rgen_t::gen);
         for (size_t i = 0; i < nb_neurons; ++i)
-          _add_neuron();//also call the random params
+            _add_neuron();//also call the random params
 
         // conns
         size_t nb_conns = std::uniform_int_distribution<>(Params::_min_nb_conns, Params::_max_nb_conns)(rgen_t::gen);
@@ -129,85 +150,86 @@ public:
 
     }
 
-        // serialize the graph "by hand"...
-              template<typename Archive>
-              void save(Archive& a, const unsigned v) const {
-    //            dbg::trace("cppn", DBG_HERE);
-                std::vector<int> inputs;
-                std::vector<int> outputs;
-                std::vector<typename neuron_t::af_t::params_t> afparams;
-                std::vector<typename neuron_t::pf_t::params_t> pfparams;
-                std::map<vertex_desc_t, int> nmap;
-                std::vector<std::pair<int, int> > conns;
-                std::vector<weight_t> weights;
+    // serialize the graph "by hand"...
+    template<typename Archive>
+    void save(Archive& a, const unsigned v) const {
+        //            dbg::trace("cppn", DBG_HERE);
+        std::vector<int> inputs;
+        std::vector<int> outputs;
+        std::vector<typename neuron_t::af_t::params_t> afparams;
+        std::vector<typename neuron_t::pf_t::params_t> pfparams;
+        std::map<vertex_desc_t, int> nmap;
+        std::vector<std::pair<int, int> > conns;
+        std::vector<weight_t> weights;
 
-                BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
-                  if (this->is_input(v))
-                    inputs.push_back(afparams.size());
-                  if (this->is_output(v))
-                    outputs.push_back(afparams.size());
-                  nmap[v] = afparams.size();
-                  afparams.push_back(this->_g[v].get_afparams());
-                  pfparams.push_back(this->_g[v].get_pfparams());
-                }
-                BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
-                  conns.push_back(std::make_pair(nmap[source(e, this->_g)],
-                                                 nmap[target(e, this->_g)]));
-                  weights.push_back(this->_g[e].get_weight());
-                }
-                assert(pfparams.size() == afparams.size());
-                assert(weights.size() == conns.size());
+        BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
+            if (this->is_input(v))
+                inputs.push_back(afparams.size());
+            if (this->is_output(v))
+                outputs.push_back(afparams.size());
+            nmap[v] = afparams.size();
+            afparams.push_back(this->_g[v].get_afparams());
+            pfparams.push_back(this->_g[v].get_pfparams());
+        }
+        BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
+            conns.push_back(std::make_pair(nmap[source(e, this->_g)],
+                            nmap[target(e, this->_g)]));
+            weights.push_back(this->_g[e].get_weight());
+        }
+        assert(pfparams.size() == afparams.size());
+        assert(weights.size() == conns.size());
 
-                a & BOOST_SERIALIZATION_NVP(afparams);
-                a & BOOST_SERIALIZATION_NVP(pfparams);
-                a & BOOST_SERIALIZATION_NVP(weights);
-                a & BOOST_SERIALIZATION_NVP(conns);
-                a & BOOST_SERIALIZATION_NVP(inputs);
-                a & BOOST_SERIALIZATION_NVP(outputs);
-              }
-              template<typename Archive>
-              void load(Archive& a, const unsigned v) {
-//                dbg::trace("nn", DBG_HERE);
-                std::vector<int> inputs;
-                std::vector<int> outputs;
-                std::vector<typename neuron_t::af_t::params_t> afparams;
-                std::vector<typename neuron_t::pf_t::params_t> pfparams;
-                std::map<size_t, vertex_desc_t> nmap;
-                std::vector<std::pair<int, int> > conns;
-                std::vector<weight_t> weights;
+        a & afparams;
+        a & pfparams;
+        a & weights;
+        a & conns;
+        a & inputs;
+        a & outputs;
+    }
 
-                a & BOOST_SERIALIZATION_NVP(afparams);
-                a & BOOST_SERIALIZATION_NVP(pfparams);
-                a & BOOST_SERIALIZATION_NVP(weights);
-                a & BOOST_SERIALIZATION_NVP(conns);
-                a & BOOST_SERIALIZATION_NVP(inputs);
-                a & BOOST_SERIALIZATION_NVP(outputs);
+    template<typename Archive>
+    void load(Archive& a, const unsigned v) {
+        //                dbg::trace("nn", DBG_HERE);
+        std::vector<int> inputs;
+        std::vector<int> outputs;
+        std::vector<typename neuron_t::af_t::params_t> afparams;
+        std::vector<typename neuron_t::pf_t::params_t> pfparams;
+        std::map<size_t, vertex_desc_t> nmap;
+        std::vector<std::pair<int, int> > conns;
+        std::vector<weight_t> weights;
 
-                assert(pfparams.size() == afparams.size());
+        a & afparams;
+        a & pfparams;
+        a & weights;
+        a & conns;
+        a & inputs;
+        a & outputs;
 
-                assert(weights.size() == conns.size());
-                this->set_nb_inputs(inputs.size());
-                this->set_nb_outputs(outputs.size());
-                for (size_t i = 0; i < this->get_nb_inputs(); ++i)
-                  nmap[inputs[i]] = this->get_input(i);
-                for (size_t i = 0; i < this->get_nb_outputs(); ++i)
-                  nmap[outputs[i]] = this->get_output(i);
+        assert(pfparams.size() == afparams.size());
 
-                for (size_t i = 0; i < afparams.size(); ++i)
-                  if (std::find(inputs.begin(), inputs.end(), i) == inputs.end()
-                      && std::find(outputs.begin(), outputs.end(), i) == outputs.end())
-                    nmap[i] = this->add_neuron("n", pfparams[i], afparams[i]);
-                  else {
-                    this->_g[nmap[i]].set_pfparams(pfparams[i]);
-                    this->_g[nmap[i]].set_afparams(afparams[i]);
-                  }
+        assert(weights.size() == conns.size());
+        this->set_nb_inputs(inputs.size());
+        this->set_nb_outputs(outputs.size());
+        for (size_t i = 0; i < this->get_nb_inputs(); ++i)
+            nmap[inputs[i]] = this->get_input(i);
+        for (size_t i = 0; i < this->get_nb_outputs(); ++i)
+            nmap[outputs[i]] = this->get_output(i);
+
+        for (size_t i = 0; i < afparams.size(); ++i)
+            if (std::find(inputs.begin(), inputs.end(), i) == inputs.end()
+                    && std::find(outputs.begin(), outputs.end(), i) == outputs.end())
+                nmap[i] = this->add_neuron("n", pfparams[i], afparams[i]);
+            else {
+                this->_g[nmap[i]].set_pfparams(pfparams[i]);
+                this->_g[nmap[i]].set_afparams(afparams[i]);
+            }
 
 
-                //assert(nmap.size() == num_vertices(this->_g));
-                for (size_t i = 0; i < conns.size(); ++i)
-                  this->add_connection(nmap[conns[i].first], nmap[conns[i].second], weights[i]);
-              }
-              BOOST_SERIALIZATION_SPLIT_MEMBER();
+        //assert(nmap.size() == num_vertices(this->_g));
+        for (size_t i = 0; i < conns.size(); ++i)
+            this->add_connection(nmap[conns[i].first], nmap[conns[i].second], weights[i]);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
 
 private:
 
@@ -264,7 +286,7 @@ public:
 
     void _add_neuron_on_conn(){
         if (!num_edges(this->_g))
-          return;
+            return;
         edge_desc_t e = random_edge(this->_g);
         vertex_desc_t src = source(e, this->_g);
         vertex_desc_t tgt = target(e, this->_g);
@@ -343,24 +365,24 @@ public:
 
         BGL_FORALL_EDGES_T(e, this->_g, graph_t)
                 if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::_rate_change_conn) {
-                    vertex_desc_t src = source(e, this->_g);
-                    vertex_desc_t tgt = target(e, this->_g);
-                    weight_t w = this->_g[e].get_weight();
-                    remove_edge(e, this->_g);
-                    int max_tries = num_vertices(this->_g) * num_vertices(this->_g),
+            vertex_desc_t src = source(e, this->_g);
+            vertex_desc_t tgt = target(e, this->_g);
+            weight_t w = this->_g[e].get_weight();
+            remove_edge(e, this->_g);
+            int max_tries = num_vertices(this->_g) * num_vertices(this->_g),
                     nb_tries = 0;
-                    if (std::uniform_int_distribution<>(0,1)(rgen_t::gen))
-                        do
-                            src = _random_src();
-                        while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
-                    else
-                        do
-                            tgt = _random_tgt();
-                        while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
-                    if (nb_tries < max_tries)
-                        this->add_connection(src, tgt, w);
-                    return;
-                }
+            if (std::uniform_int_distribution<>(0,1)(rgen_t::gen))
+                do
+                src = _random_src();
+            while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
+            else
+            do
+                tgt = _random_tgt();
+            while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
+            if (nb_tries < max_tries)
+                this->add_connection(src, tgt, w);
+            return;
+        }
     }
 
 
