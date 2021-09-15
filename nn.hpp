@@ -416,7 +416,7 @@ namespace nn2 {
     }
 
     // remove neurons that are not connected to both one input and
-    // one output (this is NOT callled automatically in NN
+    // one output (this is NOT called automatically in NN
     //
     // WARNING: if simplify_in is true, this can change the behavior
     // of neurons since neurons not connected to inputs but connected
@@ -425,7 +425,7 @@ namespace nn2 {
     // principle : keep the neurons that are successors of inputs
     // and predecessors of outputs
     void simplify(bool simplify_in = false) {
-      // we need sets and not lists withouh io
+      // we need sets and not lists without io
       std::set<vertex_desc_t> all_neurons;
       BGL_FORALL_VERTICES_T(v, this->_g, graph_t)
       if (!is_input(v) && !is_output(v))
