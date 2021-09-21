@@ -53,16 +53,18 @@ struct Params{
 enum{sine = 0, sigmoid, gaussian, linear};
 
 struct default_params{
-    static constexpr float _rate_add_neuron = 0.1;
-    static constexpr float _rate_del_neuron = 0.01;
-    static constexpr float _rate_add_conn = 0.1;
-    static constexpr float _rate_del_conn = 0.01;
-    static constexpr float _rate_change_conn = 0.1;
+    struct cppn{
+        static constexpr float _rate_add_neuron = 0.1;
+        static constexpr float _rate_del_neuron = 0.01;
+        static constexpr float _rate_add_conn = 0.1;
+        static constexpr float _rate_del_conn = 0.01;
+        static constexpr float _rate_change_conn = 0.1;
 
-    static constexpr size_t _min_nb_neurons = 2;
-    static constexpr size_t _max_nb_neurons = 30;
-    static constexpr size_t _min_nb_conns = 1;
-    static constexpr size_t _max_nb_conns = 100;
+        static constexpr size_t _min_nb_neurons = 2;
+        static constexpr size_t _max_nb_neurons = 30;
+        static constexpr size_t _min_nb_conns = 1;
+        static constexpr size_t _max_nb_conns = 100;
+    };
 };
 
 }//cppn
@@ -121,12 +123,12 @@ public:
         _random_neuron_params();
 
         // neurons
-        size_t nb_neurons = std::uniform_int_distribution<>(Params::_min_nb_neurons, Params::_max_nb_neurons)(rgen_t::gen);
+        size_t nb_neurons = std::uniform_int_distribution<>(Params::cppn::_min_nb_neurons, Params::cppn::_max_nb_neurons)(rgen_t::gen);
         for (size_t i = 0; i < nb_neurons; ++i)
             _add_neuron();//also call the random params
 
         // conns
-        size_t nb_conns = std::uniform_int_distribution<>(Params::_min_nb_conns, Params::_max_nb_conns)(rgen_t::gen);
+        size_t nb_conns = std::uniform_int_distribution<>(Params::cppn::_min_nb_conns, Params::cppn::_max_nb_conns)(rgen_t::gen);
         for (size_t i = 0; i < nb_conns; ++i)
             _add_conn();
         this->simplify();
@@ -139,16 +141,16 @@ public:
 
         std::uniform_real_distribution<> dist(0,1);
 
-        if (dist(rgen_t::gen) < Params::_rate_add_conn)
+        if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
             _add_conn();
 
-        if (dist(rgen_t::gen) < Params::_rate_del_conn)
+        if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
             _del_conn();
 
-        if (dist(rgen_t::gen) < Params::_rate_add_neuron)
+        if (dist(rgen_t::gen) < Params::cppn::_rate_add_neuron)
             _add_neuron_on_conn();
 
-        if (dist(rgen_t::gen) < Params::_rate_del_neuron)
+        if (dist(rgen_t::gen) < Params::cppn::_rate_del_neuron)
             _del_neuron();
 
     }
@@ -367,7 +369,7 @@ public:
                 this->_g[e].get_weight().mutate();
 
         BGL_FORALL_EDGES_T(e, this->_g, graph_t)
-                if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::_rate_change_conn) {
+                if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::cppn::_rate_change_conn) {
             vertex_desc_t src = source(e, this->_g);
             vertex_desc_t tgt = target(e, this->_g);
             weight_t w = this->_g[e].get_weight();
