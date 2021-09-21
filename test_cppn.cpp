@@ -4,28 +4,30 @@
 
 std::mt19937 nn2::rgen_t::gen;
 struct params{
-    static float _rate_add_neuron;
-    static float _rate_del_neuron;
-    static float _rate_add_conn;
-    static float _rate_del_conn;
-    static float _rate_change_conn;
+    struct cppn{
+        static float _rate_add_neuron;
+        static float _rate_del_neuron;
+        static float _rate_add_conn;
+        static float _rate_del_conn;
+        static float _rate_change_conn;
 
-    static size_t _min_nb_neurons;
-    static size_t _max_nb_neurons;
-    static size_t _min_nb_conns;
-    static size_t _max_nb_conns;
+        static size_t _min_nb_neurons;
+        static size_t _max_nb_neurons;
+        static size_t _min_nb_conns;
+        static size_t _max_nb_conns;
+    };
 };
 
-float params::_rate_add_neuron = 0;
-float params::_rate_del_neuron = 1.0;
-float params::_rate_add_conn = 0;
-float params::_rate_del_conn = 1;
-float params::_rate_change_conn = 0.5;
+float params::cppn::_rate_add_neuron = 0;
+float params::cppn::_rate_del_neuron = 1.0;
+float params::cppn::_rate_add_conn = 0;
+float params::cppn::_rate_del_conn = 1;
+float params::cppn::_rate_change_conn = 0.5;
 
-size_t params::_min_nb_neurons = 10;
-size_t params::_max_nb_neurons = 100;
-size_t params::_min_nb_conns = 2;
-size_t params::_max_nb_conns = 10000;
+size_t params::cppn::_min_nb_neurons = 10;
+size_t params::cppn::_max_nb_neurons = 100;
+size_t params::cppn::_min_nb_conns = 2;
+size_t params::cppn::_max_nb_conns = 10000;
 
 int main(int argc,char** argv){
 
