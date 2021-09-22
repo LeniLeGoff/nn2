@@ -18,22 +18,44 @@ namespace nn2{
 
 namespace cppn{
 
-typedef nn2::EvoFloat<1,evo_float::default_params> evo_float_t;
+struct default_params{
+    struct cppn{
+        static constexpr float _rate_add_neuron = 0.1;
+        static constexpr float _rate_del_neuron = 0.01;
+        static constexpr float _rate_add_conn = 0.1;
+        static constexpr float _rate_del_conn = 0.01;
+        static constexpr float _rate_change_conn = 0.1;
 
-struct Params{
-    Params(){}
-    Params(const Params& p):
+        static constexpr size_t _min_nb_neurons = 2;
+        static constexpr size_t _max_nb_neurons = 30;
+        static constexpr size_t _min_nb_conns = 1;
+        static constexpr size_t _max_nb_conns = 100;
+    };
+    struct evo_float{
+        static constexpr float mutation_rate = 0.1f;
+        static constexpr float cross_rate = 0.0f;
+        static constexpr nn2::evo_float::mutation_t mutation_type = nn2::evo_float::polynomial;
+        static constexpr nn2::evo_float::cross_over_t cross_over_type = nn2::evo_float::no_cross_over;
+        static constexpr float eta_m = 15.0f;
+        static constexpr float eta_c = 15.0f;
+    };
+};
+
+template<typename Params = default_params>
+struct AfParams{
+    AfParams(){}
+    AfParams(const AfParams& p):
         type(p.type),
         p0(p.p0),
         p1(p.p1)
     {}
 
     int type = -1;
-    evo_float_t p0;
-    evo_float_t p1;
+    nn2::EvoFloat<1,Params> p0;
+    nn2::EvoFloat<1,Params> p1;
 
     void random(){
-        type = std::uniform_int_distribution<>(0,3)(rgen_t::gen);
+        type = std::uniform_int_distribution<>(0,5)(rgen_t::gen);
         p0.random();
         p1.random();
     }
@@ -50,39 +72,29 @@ struct Params{
     }
 
 };
-enum{sine = 0, sigmoid, gaussian, linear};
+enum{sine = 0, sigmoid, gaussian, linear, cube, polynome};
 
-struct default_params{
-    struct cppn{
-        static constexpr float _rate_add_neuron = 0.1;
-        static constexpr float _rate_del_neuron = 0.01;
-        static constexpr float _rate_add_conn = 0.1;
-        static constexpr float _rate_del_conn = 0.01;
-        static constexpr float _rate_change_conn = 0.1;
-
-        static constexpr size_t _min_nb_neurons = 2;
-        static constexpr size_t _max_nb_neurons = 30;
-        static constexpr size_t _min_nb_conns = 1;
-        static constexpr size_t _max_nb_conns = 100;
-    };
-};
 
 }//cppn
 
 // Activation function for Compositional Pattern Producing Network
-
-struct AfCppn : public Af<cppn::Params> {
-
+template <typename Params>
+struct AfCppn : public Af<Params> {
+    typedef Params params_t;
     float operator() (float p) const {
         switch (this->_params.type) {
         case cppn::sine:
-            return sin(_params.p0.data(0)*p + _params.p1.data(0));
+            return sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
         case cppn::sigmoid:
-            return ((1.0 / (_params.p0.data(0) + exp(-p))) - _params.p1.data(0)) * 2.0;
+            return ((1.0 / (this->_params.p0.data(0) + exp(-p))) - this->_params.p1.data(0)) * 2.0;
         case cppn::gaussian:
-            return exp(-_params.p0.data(0)*powf(p, 2)+_params.p1.data(0));
+            return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
         case cppn::linear:
-            return std::min(std::max(_params.p0.data(0)*p+_params.p1.data(0), -3.0f), 3.0f) / 3.0f;
+            return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0f), 3.0f) / 3.0f;
+        case cppn::cube:
+            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
+        case cppn::polynome:
+            return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
         default:
             assert(0);
         }
@@ -90,19 +102,28 @@ struct AfCppn : public Af<cppn::Params> {
     }
 
     void set_params(const params_t& p){
-        _params.type = p.type;
-        _params.p0 = p.p0;
-        _params.p1 = p.p1;
+        this->_params.type = p.type;
+        this->_params.p0 = p.p0;
+        this->_params.p1 = p.p1;
     }
-
 };
 
 
 
-template <typename Params = cppn::default_params>
-class CPPN : public NN<Neuron<PfWSum<cppn::evo_float_t>,AfCppn>, Connection<cppn::evo_float_t>>
+template <typename N, typename C, typename Params>
+class CPPN : public NN<N, C>
 {
 public:
+    typedef NN<N, C> nn_t;
+    typedef N neuron_t;
+    typedef C conn_t;
+    typedef typename nn_t::io_t io_t;
+    typedef typename nn_t::weight_t weight_t;
+    typedef typename nn_t::vertex_desc_t vertex_desc_t;
+    typedef typename nn_t::edge_desc_t edge_desc_t;
+    typedef typename nn_t::adj_it_t adj_it_t;
+    typedef typename nn_t::graph_t graph_t;
+
 
     CPPN(){}
     CPPN(size_t nb_inputs, size_t nb_outputs) :
@@ -284,7 +305,7 @@ private:
     }
 public:
     void _add_neuron(){
-        vertex_desc_t n = add_neuron("n");
+        vertex_desc_t n = this->add_neuron("n");
         this->_g[n].get_pfparams().random();
         this->_g[n].get_afparams().random();
     }
@@ -296,7 +317,7 @@ public:
         vertex_desc_t src = source(e, this->_g);
         vertex_desc_t tgt = target(e, this->_g);
         weight_t w = this->_g[e].get_weight();
-        vertex_desc_t n = add_neuron("n");
+        vertex_desc_t n = this->add_neuron("n");
         this->_g[n].get_pfparams().random();
         this->_g[n].get_afparams().random();
         //
@@ -343,7 +364,7 @@ public:
         do {
             src = _random_src();
             tgt = _random_tgt();
-        } while (src == tgt && is_adjacent(_g, src, tgt) && ++nb_tries < max_tries);
+        } while (src == tgt && is_adjacent(this->_g, src, tgt) && ++nb_tries < max_tries);
         if (nb_tries < max_tries) {
             weight_t w;
             w.random();
@@ -399,6 +420,8 @@ private:
 
 };
 
+typedef CPPN<Neuron<PfWSum<EvoFloat<1,cppn::default_params>>,AfCppn<cppn::AfParams<cppn::default_params>>>,
+             Connection<EvoFloat<1,cppn::default_params>>,cppn::default_params> default_cppn_t;
 
 }//nn2
 

@@ -6,7 +6,7 @@
 
 std::mt19937 nn2::rgen_t::gen;
 
-void generate_image(nn2::CPPN<>& cppn){
+void generate_image(nn2::default_cppn_t& cppn){
     cppn.init();
 
     cv::Mat image(200,200,CV_8UC3);
@@ -32,7 +32,7 @@ int main(int argc,char** argv){
     nn2::rgen_t::gen.seed(time(0));
 
 
-    nn2::CPPN<> cppn(2,3);
+    nn2::default_cppn_t cppn(2,3);
 
     std::cout << "Original" << std::endl;
 
@@ -45,7 +45,7 @@ int main(int argc,char** argv){
     generate_image(cppn);
 
 
-    nn2::CPPN<> cppn2;
+    nn2::default_cppn_t cppn2;
 
     boost::archive::text_iarchive iarch(sstream);
 
