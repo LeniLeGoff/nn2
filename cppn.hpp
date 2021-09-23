@@ -55,7 +55,7 @@ struct AfParams{
     nn2::EvoFloat<1,Params> p1;
 
     void random(){
-        type = std::uniform_int_distribution<>(0,5)(rgen_t::gen);
+        type = std::uniform_int_distribution<>(0,3)(rgen_t::gen);
         p0.random();
         p1.random();
     }
@@ -84,17 +84,13 @@ struct AfCppn : public Af<Params> {
     float operator() (float p) const {
         switch (this->_params.type) {
         case cppn::sine:
-            return sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
+            return sin(this->_params.p0.data(0)*p + 1/this->_params.p1.data(0));
         case cppn::sigmoid:
-            return ((1.0 / (this->_params.p0.data(0) + exp(-p))) - this->_params.p1.data(0)) * 2.0;
+            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p + this->_params.p1.data(0)))) - 0.5) * 2;
         case cppn::gaussian:
             return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
         case cppn::linear:
-            return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0f), 3.0f) / 3.0f;
-        case cppn::cube:
-            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
-        case cppn::polynome:
-            return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
+            return std::max(std::min(this->_params.p0.data(0)*p+this->_params.p1.data(0),5.f),-5.f)/5.f;
         default:
             assert(0);
         }
