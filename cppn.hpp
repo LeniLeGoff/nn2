@@ -20,6 +20,8 @@ namespace cppn{
 
 struct default_params{
     struct cppn{
+        static constexpr bool _mutate_connections = true;
+        static constexpr bool _mutate_neurons = true;
         static constexpr float _rate_add_neuron = 0.1;
         static constexpr float _rate_del_neuron = 0.01;
         static constexpr float _rate_add_conn = 0.1;
@@ -156,9 +158,10 @@ public:
     }
 
     void mutate(){
-        _change_connections();
-
-        _change_neurons();
+        if(Params::cppn::_mutate_connections)
+            _change_connections();
+        if(Params::cppn::_mutate_neurons)
+            _change_neurons();
 
         std::uniform_real_distribution<> dist(0,1);
 
@@ -390,25 +393,25 @@ public:
                 this->_g[e].get_weight().mutate();
 
         BGL_FORALL_EDGES_T(e, this->_g, graph_t)
-                if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::cppn::_rate_change_conn) {
-            vertex_desc_t src = source(e, this->_g);
-            vertex_desc_t tgt = target(e, this->_g);
-            weight_t w = this->_g[e].get_weight();
-            remove_edge(e, this->_g);
-            int max_tries = num_vertices(this->_g) * num_vertices(this->_g),
-                    nb_tries = 0;
-            if (std::uniform_int_distribution<>(0,1)(rgen_t::gen))
-                do
-                src = _random_src();
-            while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
-            else
-            do
-                tgt = _random_tgt();
-            while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
-            if (nb_tries < max_tries)
-                this->add_connection(src, tgt, w);
-            return;
-        }
+            if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::cppn::_rate_change_conn) {
+                vertex_desc_t src = source(e, this->_g);
+                vertex_desc_t tgt = target(e, this->_g);
+                weight_t w = this->_g[e].get_weight();
+                remove_edge(e, this->_g);
+                int max_tries = num_vertices(this->_g) * num_vertices(this->_g),
+                nb_tries = 0;
+                if (std::uniform_int_distribution<>(0,1)(rgen_t::gen))
+                    do
+                        src = _random_src();
+                    while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
+                else
+                    do
+                        tgt = _random_tgt();
+                    while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt));
+                if (nb_tries < max_tries)
+                    this->add_connection(src, tgt, w);
+                return;
+            }
     }
 
 
@@ -421,7 +424,7 @@ private:
 };
 
 typedef CPPN<Neuron<PfWSum<EvoFloat<1,cppn::default_params>>,AfCppn<cppn::AfParams<cppn::default_params>>>,
-             Connection<EvoFloat<1,cppn::default_params>>,cppn::default_params> default_cppn_t;
+Connection<EvoFloat<1,cppn::default_params>>,cppn::default_params> default_cppn_t;
 
 }//nn2
 
