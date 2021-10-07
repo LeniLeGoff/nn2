@@ -165,20 +165,21 @@ public:
         // conns
         size_t nb_conns = std::uniform_int_distribution<>(Params::cppn::_min_nb_conns, Params::cppn::_max_nb_conns)(rgen_t::gen);
         for (size_t i = 0; i < nb_conns; ++i)
-            _add_conn();
+            _add_conn_nodup_noio();
         this->simplify();
     }
 
     void mutate(){
         if(Params::cppn::_mutate_connections)
-            _change_connections();
+            _change_connections_noio();
         if(Params::cppn::_mutate_neurons)
             _change_neurons();
+
 
         std::uniform_real_distribution<> dist(0,1);
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
-            _add_conn_nodup();
+            _add_conn_nodup_noio();
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
             _del_conn();
@@ -322,6 +323,7 @@ private:
             return *edges(g).first;
     }
 
+
     vertex_desc_t _random_src(){
         vertex_desc_t v;
         do
@@ -406,6 +408,24 @@ public:
         }
     }
 
+    void _add_conn_nodup_noio(){
+        vertex_desc_t src, tgt;
+        // this is only an upper bound; a connection might of course
+        // be possible even after max_tries tries.
+        size_t max_tries = num_vertices(this->_g) * num_vertices(this->_g),
+                nb_tries = 0;
+        do {
+            src = _random_src();
+            tgt = _random_tgt();
+        } while (src == tgt && is_adjacent(this->_g, src, tgt) && this->is_input(src) && this->is_output(tgt) && ++nb_tries < max_tries);
+        if (nb_tries < max_tries) {
+            weight_t w;
+            w.random();
+            this->add_connection(src, tgt, w);
+        }
+    }
+
+
     void _del_conn(){
         if (!this->get_nb_connections())
             return;
@@ -445,7 +465,31 @@ public:
             }
     }
 
+    void _change_connections_noio(){
+        BGL_FORALL_EDGES_T(e, this->_g, graph_t)
+                this->_g[e].get_weight().mutate();
 
+        BGL_FORALL_EDGES_T(e, this->_g, graph_t)
+            if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::cppn::_rate_change_conn) {
+                vertex_desc_t src = source(e, this->_g);
+                vertex_desc_t tgt = target(e, this->_g);
+                weight_t w = this->_g[e].get_weight();
+                remove_edge(e, this->_g);
+                int max_tries = num_vertices(this->_g) * num_vertices(this->_g),
+                nb_tries = 0;
+                if (std::uniform_int_distribution<>(0,1)(rgen_t::gen))
+                    do
+                        src = _random_src();
+                    while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt) && this->is_input(src) && this->is_output(tgt));
+                else
+                    do
+                        tgt = _random_tgt();
+                    while(++nb_tries < max_tries && is_adjacent(this->_g, src, tgt) && this->is_input(src) && this->is_output(tgt));
+                if (nb_tries < max_tries)
+                    this->add_connection(src, tgt, w);
+                return;
+            }
+    }
 
 private:
     size_t _nb_inputs = 2;
