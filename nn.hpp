@@ -241,6 +241,7 @@ namespace nn2 {
       size_t k = 0;
       BOOST_FOREACH(vertex_desc_t& v, _inputs) {
         v = add_vertex(_g);
+        _g[v]._id = boost::lexical_cast<std::string>(_neuron_counter++);
         this->_g[v].set_in(k++);
       }
     }
@@ -249,6 +250,7 @@ namespace nn2 {
       size_t k = 0;
       BOOST_FOREACH(vertex_desc_t& v, _outputs) {
         v = add_vertex(_g);
+        _g[v]._id = boost::lexical_cast<std::string>(_neuron_counter++);
         this->_g[v].set_out(k++);
       }
     }
@@ -499,18 +501,17 @@ namespace nn2 {
       ofs << "digraph G {" << std::endl;
       BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
         ofs << this->_g[v].get_id();
-        ofs << " [label=\""<<this->_g[v].get_id()<<"\"";
-        // ofs << " af"<< this->_g[v].get_afparams();
-        // ofs << "| pf"<< this->_g[v].get_pfparams() <<"\"";
-        if (is_input(v) || is_output(v))
-          ofs<<" shape=doublecircle";
-
-        ofs <<"]"<< std::endl;
+        if (is_input(v))
+            ofs << " [label=\"i_"<<this->_g[v].get_id()<<"\"]";
+        else if(is_output(v))
+            ofs << " [label=\"o_"<<this->_g[v].get_id()<<"\"]";
+        else
+            ofs << " [label=\"" << this->_g[v].get_id() <<"\"]";
       }
       BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
         ofs << this->_g[source(e, this->_g)].get_id()
-            << " -> " << this->_g[target(e, this->_g)].get_id()
-            << "[label=\"" << _g[e].get_weight() << "\"]" << std::endl;
+            << " -> " << this->_g[target(e, this->_g)].get_id();
+        ofs << "[label=\"" <<  _g[e].get_weight() << "\"]" << std::endl;
       }
       ofs << "}" << std::endl;
     }

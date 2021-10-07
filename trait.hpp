@@ -104,7 +104,7 @@ struct trait<nn2::EvoFloat<1, Params>>{
         return 1;
     }
     static float single_value(const evo_float_t& t) {
-        return t.data(0)    ;
+        return t.data(0);
     }
 };
 

@@ -82,25 +82,39 @@ enum{sine = 0, sigmoid, gaussian, linear, cube, polynome};
 // Activation function for Compositional Pattern Producing Network
 template <typename Params>
 struct AfCppn : public Af<Params> {
+    typedef AfCppn<Params> this_t;
     typedef Params params_t;
     float operator() (float p) const {
         switch (this->_params.type) {
         case cppn::sine:
             return sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
         case cppn::sigmoid:
-            return ((1.0 / (this->_params.p0.data(0) + exp(-p))) - this->_params.p1.data(0)) * 2.0;
+            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p + this->_params.p1.data(0)))) - 0.5) * 2;
         case cppn::gaussian:
             return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
         case cppn::linear:
             return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0f), 3.0f) / 3.0f;
-        case cppn::cube:
-            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
-        case cppn::polynome:
-            return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
+//        case cppn::cube:
+//            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
+//        case cppn::polynome:
+//            return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
         default:
             assert(0);
         }
         return 0;
+    }
+
+
+    friend std::ostream &operator <<(std::ostream& ostr, this_t& obj){
+        if(obj._params.type == cppn::sine)
+            ostr << "sin_" <<  obj._params.p0.data(0) << "_" << obj._params.p1.data(0);
+        else if(obj._params.type == cppn::sigmoid)
+            ostr << "sigm_" <<  obj._params.p0.data(0) << "_" << obj._params.p1.data(0);
+        else if(obj._params.type == cppn::gaussian)
+            ostr << "gaus_" <<  obj._params.p0.data(0) << "_" << obj._params.p1.data(0);
+        else if(obj._params.type == cppn::linear)
+            ostr << "lin_" << obj._params.p0.data(0) << "_" << obj._params.p1.data(0);
+        return ostr;
     }
 
     void set_params(const params_t& p){
@@ -109,8 +123,6 @@ struct AfCppn : public Af<Params> {
         this->_params.p1 = p.p1;
     }
 };
-
-
 
 template <typename N, typename C, typename Params>
 class CPPN : public NN<N, C>
@@ -166,7 +178,7 @@ public:
         std::uniform_real_distribution<> dist(0,1);
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
-            _add_conn();
+            _add_conn_nodup();
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
             _del_conn();
@@ -259,6 +271,25 @@ public:
             this->add_connection(nmap[conns[i].first], nmap[conns[i].second], weights[i]);
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER();
+
+    void write_dot(std::ostream& ofs){
+        ofs << "digraph G {" << std::endl;
+        BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
+          ofs << this->_g[v].get_id();
+          if (this->is_input(v))
+              ofs << " [label=\"i_"<<this->_g[v].get_id()<<"\",layer=0]" << std::endl;
+          else if(this->is_output(v))
+              ofs << " [label=\"o_"<<this->_g[v].get_id()<<"\",layer=2]" << std::endl;
+          else
+              ofs << " [label=\"" << this->_g[v].get_af() <<"\",layer=1]" << std::endl;
+        }
+        BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
+          ofs << this->_g[source(e, this->_g)].get_id()
+              << " -> " << this->_g[target(e, this->_g)].get_id();
+          ofs << "[label=\"" <<  this->_g[e].get_weight() << "\"]" << std::endl;
+        }
+        ofs << "}" << std::endl;
+    }
 
 private:
 

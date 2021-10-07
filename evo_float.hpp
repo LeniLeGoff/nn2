@@ -144,6 +144,14 @@ public:
       ar & BOOST_SERIALIZATION_NVP(_data);
     }
 
+    friend std::ostream &operator <<(std::ostream& ostr, this_t& obj){
+        ostr << obj._data[0];
+        for(int i = 1; i < obj._data.size(); i++)
+            ostr << "," << obj._data[i];
+        return ostr;
+    }
+
+
 protected:
     std::vector<float> _data;
 
@@ -160,6 +168,8 @@ protected:
 #endif
     }
 };
+
+
 
 // partial specialization for operators
 namespace evo_float {
