@@ -84,19 +84,24 @@ template <typename Params>
 struct AfCppn : public Af<Params> {
     typedef Params params_t;
     float operator() (float p) const {
+        float res = 0;
         switch (this->_params.type) {
         case cppn::sine:
-            return sin(this->_params.p0.data(0)*p + 1/this->_params.p1.data(0));
+            res = sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
+            break;
         case cppn::sigmoid:
-            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p + this->_params.p1.data(0)))) - 0.5) * 2;
+            res = ((1.0 / (1 + exp(-this->_params.p0.data(0)*p + this->_params.p1.data(0)))) - 0.5) * 2;
+            break;
         case cppn::gaussian:
-            return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
+            res = exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
+            break;
         case cppn::linear:
-            return std::max(std::min(this->_params.p0.data(0)*p+this->_params.p1.data(0),5.f),-5.f)/5.f;
+            res = std::max(std::min(this->_params.p0.data(0)*p+this->_params.p1.data(0),5.f),-5.f)/5.f;
+            break;
         default:
             assert(0);
         }
-        return 0;
+        return res;
     }
 
     void set_params(const params_t& p){
@@ -151,6 +156,7 @@ public:
         for (size_t i = 0; i < nb_conns; ++i)
             _add_conn();
         this->simplify();
+        this->set_all_biases(std::vector<double>(this->get_nb_neurons(),0));
     }
 
     void mutate(){
