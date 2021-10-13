@@ -172,7 +172,7 @@ public:
     }
 
     void crossover(const this_t& parent, this_t& offspring){
-        if(cppn1.get_nb_neurons() != cppn2.get_nb_neurons()){
+        if(this->get_nb_neurons() != parent.get_nb_neurons()){
             offspring = *this;
             return;
         }
@@ -205,7 +205,7 @@ public:
 
         for(const auto& c : candidates){
             if(dist(rgen_t::gen) < Params::cppn::_rate_crossover)
-                offspring.get_graph()[c.first].get_af() = parent.get_graph().get_af();
+                offspring.get_graph()[c.first].get_af() = parent.get_graph()[c.second].get_af();
         }
     }
 
