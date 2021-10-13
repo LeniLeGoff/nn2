@@ -27,6 +27,7 @@ struct default_params{
         static constexpr float _rate_add_conn = 0.1;
         static constexpr float _rate_del_conn = 0.01;
         static constexpr float _rate_change_conn = 0.1;
+        static constexpr float _rate_crossover = 0.1;
 
         static constexpr size_t _min_nb_neurons = 2;
         static constexpr size_t _max_nb_neurons = 30;
@@ -57,7 +58,7 @@ struct AfParams{
     nn2::EvoFloat<1,Params> p1;
 
     void random(){
-        type = std::uniform_int_distribution<>(0,5)(rgen_t::gen);
+        type = std::uniform_int_distribution<>(0,3)(rgen_t::gen);
         p0.random();
         p1.random();
     }
@@ -124,6 +125,9 @@ struct AfCppn : public Af<Params> {
     }
 };
 
+template<typename N, typename C, typename P>
+bool compatible_for_crossover(const CPPN<N,C,P>& cppn1, const CPPN<N,C,P>& cppn2);
+
 template <typename N, typename C, typename Params>
 class CPPN : public NN<N, C>
 {
@@ -137,6 +141,7 @@ public:
     typedef typename nn_t::edge_desc_t edge_desc_t;
     typedef typename nn_t::adj_it_t adj_it_t;
     typedef typename nn_t::graph_t graph_t;
+    typedef NN<N,C> this_t;
 
 
     CPPN(){}
@@ -165,8 +170,46 @@ public:
         // conns
         size_t nb_conns = std::uniform_int_distribution<>(Params::cppn::_min_nb_conns, Params::cppn::_max_nb_conns)(rgen_t::gen);
         for (size_t i = 0; i < nb_conns; ++i)
-            _add_conn_nodup_noio();
+            _add_conn_nodup();
         this->simplify();
+    }
+
+    void crossover(const this_t& parent, this_t& offspring){
+        if(!compatible_for_crossover(*this,parent)){
+            offspring = *this;
+            return;
+        }
+
+        std::vector<int> degrees1;
+        std::vector<vertex_desc_t> v_descs1;
+        BGL_FORALL_VERTICES_T(v,this->_g,graph_t){
+            degrees1.push_back(degree(v,this->_g));
+            v_descs1.push_back(v);
+        }
+        std::vector<int> degrees2;
+        std::vector<vertex_desc_t> v_descs2;
+        BGL_FORALL_VERTICES_T(v,parent.get_graph(),graph_t){
+            degrees2.push_back(degree(v,parent.get_graph()));
+            v_descs2.push_back(v);
+        }
+
+        std::vector<std::pair<vertex_desc_t,vertex_desc_t>> candidates;
+        for(int i = 0; i < degrees1.size(); i++){
+            for(int j = 0; j < degrees2.size(); j++)
+            if(degrees1[i] == degrees2[j])
+                candidates.push_back(std::make_pair(v_descs1[i],v_descs2[j]));
+        }
+
+        offspring = *this;
+        if(candidates.empty()){
+            return;
+        }
+        std::uniform_real_distribution<> dist(0,1);
+
+        for(const auto& c : candidates){
+            if(dist(rgen_t::gen) < Params::cppn::_rate_crossover)
+                offspring.get_graph()[c.first].get_af() = parent.get_graph().get_af();
+        }
     }
 
     void mutate(){
@@ -179,7 +222,7 @@ public:
         std::uniform_real_distribution<> dist(0,1);
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
-            _add_conn_nodup_noio();
+            _add_conn_nodup();
 
         if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
             _del_conn();
@@ -500,6 +543,13 @@ private:
 
 typedef CPPN<Neuron<PfWSum<EvoFloat<1,cppn::default_params>>,AfCppn<cppn::AfParams<cppn::default_params>>>,
 Connection<EvoFloat<1,cppn::default_params>>,cppn::default_params> default_cppn_t;
+
+template<typename N, typename C, typename P>
+bool compatible_for_crossover(const CPPN<N,C,P>& cppn1, const CPPN<N,C,P>& cppn2){
+    if(cppn1.get_nb_neurons() != cppn2.get_nb_neurons())
+        return false;
+    return true;
+}
 
 }//nn2
 
