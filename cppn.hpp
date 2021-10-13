@@ -125,9 +125,6 @@ struct AfCppn : public Af<Params> {
     }
 };
 
-template<typename N, typename C, typename P>
-bool compatible_for_crossover(const CPPN<N,C,P>& cppn1, const CPPN<N,C,P>& cppn2);
-
 template <typename N, typename C, typename Params>
 class CPPN : public NN<N, C>
 {
@@ -175,7 +172,7 @@ public:
     }
 
     void crossover(const this_t& parent, this_t& offspring){
-        if(!compatible_for_crossover(*this,parent)){
+        if(cppn1.get_nb_neurons() != cppn2.get_nb_neurons()){
             offspring = *this;
             return;
         }
@@ -544,12 +541,6 @@ private:
 typedef CPPN<Neuron<PfWSum<EvoFloat<1,cppn::default_params>>,AfCppn<cppn::AfParams<cppn::default_params>>>,
 Connection<EvoFloat<1,cppn::default_params>>,cppn::default_params> default_cppn_t;
 
-template<typename N, typename C, typename P>
-bool compatible_for_crossover(const CPPN<N,C,P>& cppn1, const CPPN<N,C,P>& cppn2){
-    if(cppn1.get_nb_neurons() != cppn2.get_nb_neurons())
-        return false;
-    return true;
-}
 
 }//nn2
 
