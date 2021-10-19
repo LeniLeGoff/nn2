@@ -30,9 +30,12 @@ if(TEST_CPPN)
     target_include_directories(test_cppn PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_executable(test_cppn_serialization tests/test_cppn_serialization.cpp)
-    target_link_libraries(test_cppn_serialization NN2)
-    target_link_libraries(test_cppn_serialization ${OpenCV_LIBRARIES})
+    target_link_libraries(test_cppn_serialization NN2 ${OpenCV_LIBRARIES})
     target_include_directories(test_cppn_serialization PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+
+    add_executable(test_cpg tests/test_cpg.cpp)
+    target_link_libraries(test_cpg NN2 ${OpenCV_LIBRARIES})
+    target_include_directories(test_cpg PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
 endif()
 

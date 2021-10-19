@@ -190,6 +190,15 @@ namespace nn2 {
       return e.second;
     }
 
+    void create_oscillator_connection(const vertex_desc_t& u,
+                                      const vertex_desc_t& v,
+                                      weight_t weight) {
+        add_connection(u, v, weight);
+        add_connection(v, u, -weight);
+        get_neuron_by_vertex(u).set_differential_activation(true);
+        get_neuron_by_vertex(v).set_differential_activation(true);
+    }
+
     void set_all_pfparams(const std::vector<typename pf_t::params_t>& pfs) {
       assert(num_vertices(_g) == pfs.size());
       size_t k = 0;
@@ -315,8 +324,8 @@ namespace nn2 {
     }
 
     // step activation
-    void step(const std::vector<io_t>& inputs) {
-      _step(inputs);
+    void step(const std::vector<io_t>& inputs, float delta = 0.0) {
+      _step(inputs, delta);
     }
 
     // accessors
@@ -487,6 +496,16 @@ namespace nn2 {
       for (size_t i = 0; i < v1.size(); ++i)
         this->add_connection(v1[i], v2[i], w);
     }
+
+    // Create oscillator couples
+    void oscillators(const std::vector<vertex_desc_t> v1,
+                     const std::vector<vertex_desc_t> v2,
+                     const weight_t& w) {
+      assert(v1.size() == v2.size());
+      for (size_t i = 0; i < v1.size(); ++i)
+        this->create_oscillator_connection(v1[i], v2[i], w);
+    }
+
    protected:
     // attributes
     graph_t _g;
@@ -516,7 +535,7 @@ namespace nn2 {
       ofs << "}" << std::endl;
     }
 
-    void _activate(vertex_desc_t n) {
+    void _activate(vertex_desc_t n, float delta) {
       using namespace boost;
       if (_g[n].get_fixed()) return;
 
@@ -528,7 +547,7 @@ namespace nn2 {
           _g[n].set_input(i, _g[source(*in, _g)].get_current_output());
       }
 
-      _g[n].activate();
+      _g[n].activate(delta);
     }
 
     void _set_in(const std::vector<io_t>& inf) {
@@ -548,7 +567,8 @@ namespace nn2 {
            it != _outputs.end(); ++it, ++i)
         _outf[i] = _g[*it].get_current_output();
     }
-    void _step(const std::vector<io_t>& inf) {
+
+    void _step(const std::vector<io_t>& inf, float delta) {
       assert(_init_done);
       // in
       _set_in(inf);
@@ -556,7 +576,7 @@ namespace nn2 {
       // activate
       std::pair<vertex_it_t, vertex_it_t> vp;
       for (vp = boost::vertices(_g); vp.first != vp.second; ++vp.first)
-        _activate(*vp.first);
+        _activate(*vp.first, delta);
 
       // step
       for (vp = boost::vertices(_g); vp.first != vp.second; ++vp.first)

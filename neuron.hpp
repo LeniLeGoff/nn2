@@ -53,9 +53,11 @@ namespace nn2 {
     typedef IO io_t;
     typedef Pot pf_t;
     typedef Act af_t;
+
     static io_t zero() {
       return trait<IO>::zero();
     }
+
     Neuron() :
       _current_output(zero()),
       _next_output(zero()),
@@ -63,15 +65,22 @@ namespace nn2 {
       _in(-1),
       _out(-1) {
     }
+
     bool get_fixed() const {
       return _fixed;
     }
     void set_fixed(bool b = true) {
       _fixed = b;
     }
-    io_t activate() {
-      if (!_fixed)
-        _next_output = _af(_pf(_inputs) + _bias);
+
+    io_t activate(float delta) {
+      if (!_fixed) {
+        io_t output = _af(_pf(_inputs) + _bias);
+        if (_differential)
+            _next_output = _current_output + (delta * output);
+        else
+            _next_output = output;
+      }
       return _next_output;
     }
 
@@ -192,11 +201,19 @@ namespace nn2 {
       return _label;
     }
 
+    bool has_differential_activation() const {
+        return _differential;
+    }
+    void set_differential_activation(bool differential) {
+        _differential = differential;
+    }
+
     // for graph algorithms
     std::string _id;
     std::string _label;
     boost::default_color_type _color;
     int _index;
+
    protected:
 
     // activation functor
@@ -216,6 +233,8 @@ namespace nn2 {
     int _in;
     // -1 if not an output of the nn, id of output otherwise
     int _out;
+    // true if the neuron should activation should be differential
+    bool _differential = false;
   };
 }
 #endif
