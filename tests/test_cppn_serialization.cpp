@@ -24,7 +24,13 @@ void generate_image(nn2::default_cppn_t& cppn){
         }
     }
     cv::imshow("Random CPPN Generated Image",image);
-    cv::waitKey(0);
+    std::cout << "press esc to close" << std::endl;
+#define ESC 27
+    int k = -1;
+    while (k != ESC) {
+        k = cv::waitKey(0);
+    }
+#undef ESC
 }
 
 int main(int argc,char** argv){
