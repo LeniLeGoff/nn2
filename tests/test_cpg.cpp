@@ -6,7 +6,6 @@
 #include "af.hpp"
 #include "pf.hpp"
 #include "nn.hpp"
-#include "cpg.hpp"
 
 typedef nn2::PfWSum<> pf_t;
 typedef nn2::AfDirect<> af_t;
@@ -65,14 +64,14 @@ int main()
     n_b.set_next_output(-0.707);
 
     // Activate NN
-#define N_ITER 1000
+#define N_ITER 3000
     std::vector<float> outputs_a;
     std::vector<float> outputs_b;
     outputs_a.reserve(N_ITER);
     outputs_b.reserve(N_ITER);
 
     for (int i=0; i<N_ITER; i++) {
-        oscillator.step({}, 0.1);
+        oscillator.differential_step({}, 0.1);
         //std::cout << "Output, " << oscillator.get_neuron_output(0) << ", " << oscillator.get_neuron_output(1) << std::endl;
         //std::cout << "Oscill " << n_a.get_current_output() << " : " << n_b.get_current_output() << std::endl;
         outputs_a.push_back(n_a.get_current_output() * 100);
@@ -91,9 +90,16 @@ int main()
              1);
 
     cv::imshow("Ouputs", *image);
-    cv::waitKey(0);
+
+    std::cout << "press esc to close" << std::endl;
+#define ESC 27
+    int k = -1;
+    while (k != ESC) {
+        k = cv::waitKey(0);
+    }
 
     return 0;
 
+#undef ESC
 #undef N_ITER
 }

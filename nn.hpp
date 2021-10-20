@@ -324,8 +324,20 @@ namespace nn2 {
     }
 
     // step activation
-    void step(const std::vector<io_t>& inputs, float delta = 0.0) {
-      _step(inputs, delta);
+    void step(const std::vector<io_t>& inputs) {
+      _step(inputs);
+    }
+
+    /**
+     * Step activation with KR45 integration.
+     * @param inputs: inputs to the NN
+     * @param delta: delta time passed.
+     *
+     * @warning keep the delta low or the network could become unstable.
+     * If you need to do a big delta update, consider instead running this function multiple times with smaller deltas.
+     */
+    void differential_step(const std::vector<io_t>& inputs, double delta = 0.0) {
+      _step_integrate(inputs, delta);
     }
 
     // accessors
@@ -535,7 +547,7 @@ namespace nn2 {
       ofs << "}" << std::endl;
     }
 
-    void _activate(vertex_desc_t n, float delta) {
+    void _activate(vertex_desc_t n) {
       using namespace boost;
       if (_g[n].get_fixed()) return;
 
@@ -547,7 +559,30 @@ namespace nn2 {
           _g[n].set_input(i, _g[source(*in, _g)].get_current_output());
       }
 
-      _g[n].activate(delta);
+      if (BOOST_UNLIKELY(_g[n].has_differential_activation())) {
+          std::clog << "WARNING! activating a differential node without integrator" << std::endl;
+      }
+      _g[n].activate(0.0);
+    }
+
+    io_t _activate_phantom(const std::map<vertex_desc_t, io_t> &phantom_state,
+                           const std::map<vertex_desc_t, io_t> &input_state,
+                           vertex_desc_t n,
+                           double delta) const
+    {
+      using namespace boost;
+      if (_g[n].get_fixed()) return _g[n].get_current_output();
+
+      in_edge_it_t in, in_end;
+      unsigned i = 0;
+      typename trait<io_t>::vector_t inputs = trait<io_t>::zero(_g[n].get_in_degree());
+      for (tie(in, in_end) = in_edges(n, _g); in != in_end; ++in, ++i) {
+          if(i >= _g[n].get_inputs().size())
+              break;
+          inputs[i] = input_state.at(source(*in, _g));
+      }
+
+      return _g[n].activate_phantom(phantom_state.at(n), inputs, delta);
     }
 
     void _set_in(const std::vector<io_t>& inf) {
@@ -561,6 +596,7 @@ namespace nn2 {
         }
       }
     }
+
     void _set_out() {
       unsigned i = 0;
       for (typename vertex_list_t::const_iterator it = _outputs.begin();
@@ -568,7 +604,7 @@ namespace nn2 {
         _outf[i] = _g[*it].get_current_output();
     }
 
-    void _step(const std::vector<io_t>& inf, float delta) {
+    void _step(const std::vector<io_t>& inf) {
       assert(_init_done);
       // in
       _set_in(inf);
@@ -576,11 +612,91 @@ namespace nn2 {
       // activate
       std::pair<vertex_it_t, vertex_it_t> vp;
       for (vp = boost::vertices(_g); vp.first != vp.second; ++vp.first)
-        _activate(*vp.first, delta);
+        _activate(*vp.first);
 
       // step
       for (vp = boost::vertices(_g); vp.first != vp.second; ++vp.first)
         _g[*vp.first].step();
+
+      // out
+      _set_out();
+    }
+
+    /// Runge-Kutta 45 integration step
+    void _step_integrate(const std::vector<io_t>& inf, double delta)
+    {
+      assert(_init_done);
+      vertex_it_t iter;
+      vertex_it_t iter_end;
+
+      // in
+      _set_in(inf);
+
+      // Runge-Kutta 45
+      //TODO maps are not very efficient, should be replaced with a better idea
+      std::map<vertex_desc_t,io_t> initial_state;
+      std::map<vertex_desc_t,io_t> k1;
+      std::map<vertex_desc_t,io_t> k2;
+      std::map<vertex_desc_t,io_t> k3;
+      std::map<vertex_desc_t,io_t> k4;
+      std::map<vertex_desc_t,io_t> rk45;
+
+      // initial state
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        initial_state[n] = _g[n].get_current_output();
+      }
+
+      // k1 - if all nodes are differential, this step is actually useless...
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        if (_g[n].has_differential_activation()) {
+            k1[n] = initial_state[n];
+        } else {
+            k1[n] = _activate_phantom(initial_state, initial_state, n, 0.0);
+        }
+      }
+
+      // k2
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k2[n] = _activate_phantom(initial_state, k1, n, delta/2.0);
+      }
+
+      // k3
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k3[n] = _activate_phantom(initial_state, k2, n, delta/2.0);
+      }
+
+      // k4
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k4[n] = _activate_phantom(initial_state, k3, n, delta);
+      }
+
+      // Combine all predictions into one type of input
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        if (_g[n].get_fixed()) {
+            rk45[n] = _g[n].get_current_output();
+        } else {
+            //  weighted average velocity = 1/6 * (A1 + 2*(A2 + A3) + A4)
+            rk45[n] = (k1[n] + 2*(k2[n] + k3[n]) + k4[n]) / 6.0;
+        }
+      }
+
+      // activate
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+         io_t next_value = _activate_phantom(initial_state, rk45, n, delta);
+        _g[n].set_next_output(next_value);
+      }
+
+      // step
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        _g[*iter].step();
+      }
 
       // out
       _set_out();

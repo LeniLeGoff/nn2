@@ -73,15 +73,21 @@ namespace nn2 {
       _fixed = b;
     }
 
-    io_t activate(float delta) {
+    io_t activate(double delta) {
       if (!_fixed) {
-        io_t output = _af(_pf(_inputs) + _bias);
-        if (_differential)
-            _next_output = _current_output + (delta * output);
-        else
-            _next_output = output;
+        _next_output = activate_phantom(_current_output, _inputs, delta);
       }
       return _next_output;
+    }
+
+    io_t activate_phantom(io_t current_state, const typename trait<io_t>::vector_t &inputs, double delta) const {
+        if (_fixed) return current_state;
+
+        io_t output = _af(_pf(inputs) + _bias);
+        if (_differential)
+            return current_state + (delta * output);
+        else
+            return output;
     }
 
     void init() {
@@ -97,7 +103,7 @@ namespace nn2 {
       assert(i < _inputs.size());
       _inputs[i] = in;
     }
-    const typename trait<io_t>::vector_t &get_inputs(){return _inputs;}
+    const typename trait<io_t>::vector_t &get_inputs() const {return _inputs;}
     void set_weight(unsigned i, const weight_t& w) {
       _pf.set_weight(i, w);
     }
