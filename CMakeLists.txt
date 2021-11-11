@@ -37,6 +37,10 @@ if(TEST_CPPN)
     target_link_libraries(test_cpg NN2 ${OpenCV_LIBRARIES})
     target_include_directories(test_cpg PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
+    add_executable(test_cpg2 tests/test_cpg2.cpp)
+    target_link_libraries(test_cpg2 NN2 ${OpenCV_LIBRARIES})
+    target_include_directories(test_cpg2 PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+
 endif()
 
 
