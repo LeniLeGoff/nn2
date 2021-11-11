@@ -190,6 +190,15 @@ namespace nn2 {
       return e.second;
     }
 
+    void create_oscillator_connection(const vertex_desc_t& u,
+                                      const vertex_desc_t& v,
+                                      weight_t weight) {
+        add_connection(u, v, weight);
+        add_connection(v, u, -weight);
+        get_neuron_by_vertex(u).set_differential_activation(true);
+        get_neuron_by_vertex(v).set_differential_activation(true);
+    }
+
     void set_all_pfparams(const std::vector<typename pf_t::params_t>& pfs) {
       assert(num_vertices(_g) == pfs.size());
       size_t k = 0;
@@ -317,6 +326,18 @@ namespace nn2 {
     // step activation
     void step(const std::vector<io_t>& inputs) {
       _step(inputs);
+    }
+
+    /**
+     * Step activation with KR45 integration.
+     * @param inputs: inputs to the NN
+     * @param delta: delta time passed.
+     *
+     * @warning keep the delta low or the network could become unstable.
+     * If you need to do a big delta update, consider instead running this function multiple times with smaller deltas.
+     */
+    void differential_step(const std::vector<io_t>& inputs, double delta = 0.0) {
+      _step_integrate(inputs, delta);
     }
 
     // accessors
@@ -487,6 +508,16 @@ namespace nn2 {
       for (size_t i = 0; i < v1.size(); ++i)
         this->add_connection(v1[i], v2[i], w);
     }
+
+    // Create oscillator couples
+    void oscillators(const std::vector<vertex_desc_t> v1,
+                     const std::vector<vertex_desc_t> v2,
+                     const weight_t& w) {
+      assert(v1.size() == v2.size());
+      for (size_t i = 0; i < v1.size(); ++i)
+        this->create_oscillator_connection(v1[i], v2[i], w);
+    }
+
    protected:
     // attributes
     graph_t _g;
@@ -528,7 +559,30 @@ namespace nn2 {
           _g[n].set_input(i, _g[source(*in, _g)].get_current_output());
       }
 
-      _g[n].activate();
+      if (BOOST_UNLIKELY(_g[n].has_differential_activation())) {
+          std::clog << "WARNING! activating a differential node without integrator" << std::endl;
+      }
+      _g[n].activate(0.0);
+    }
+
+    io_t _activate_phantom(const std::map<vertex_desc_t, io_t> &phantom_state,
+                           const std::map<vertex_desc_t, io_t> &input_state,
+                           vertex_desc_t n,
+                           double delta) const
+    {
+      using namespace boost;
+      if (_g[n].get_fixed()) return _g[n].get_current_output();
+
+      in_edge_it_t in, in_end;
+      unsigned i = 0;
+      typename trait<io_t>::vector_t inputs = trait<io_t>::zero(_g[n].get_in_degree());
+      for (tie(in, in_end) = in_edges(n, _g); in != in_end; ++in, ++i) {
+          if(i >= _g[n].get_inputs().size())
+              break;
+          inputs[i] = input_state.at(source(*in, _g));
+      }
+
+      return _g[n].activate_phantom(phantom_state.at(n), inputs, delta);
     }
 
     void _set_in(const std::vector<io_t>& inf) {
@@ -542,12 +596,14 @@ namespace nn2 {
         }
       }
     }
+
     void _set_out() {
       unsigned i = 0;
       for (typename vertex_list_t::const_iterator it = _outputs.begin();
            it != _outputs.end(); ++it, ++i)
         _outf[i] = _g[*it].get_current_output();
     }
+
     void _step(const std::vector<io_t>& inf) {
       assert(_init_done);
       // in
@@ -561,6 +617,86 @@ namespace nn2 {
       // step
       for (vp = boost::vertices(_g); vp.first != vp.second; ++vp.first)
         _g[*vp.first].step();
+
+      // out
+      _set_out();
+    }
+
+    /// Runge-Kutta 45 integration step
+    void _step_integrate(const std::vector<io_t>& inf, double delta)
+    {
+      assert(_init_done);
+      vertex_it_t iter;
+      vertex_it_t iter_end;
+
+      // in
+      _set_in(inf);
+
+      // Runge-Kutta 45
+      //TODO maps are not very efficient, should be replaced with a better idea
+      std::map<vertex_desc_t,io_t> initial_state;
+      std::map<vertex_desc_t,io_t> k1;
+      std::map<vertex_desc_t,io_t> k2;
+      std::map<vertex_desc_t,io_t> k3;
+      std::map<vertex_desc_t,io_t> k4;
+      std::map<vertex_desc_t,io_t> rk45;
+
+      // initial state
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        initial_state[n] = _g[n].get_current_output();
+      }
+
+      // k1 - if all nodes are differential, this step is actually useless...
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        if (_g[n].has_differential_activation()) {
+            k1[n] = initial_state[n];
+        } else {
+            k1[n] = _activate_phantom(initial_state, initial_state, n, 0.0);
+        }
+      }
+
+      // k2
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k2[n] = _activate_phantom(initial_state, k1, n, delta/2.0);
+      }
+
+      // k3
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k3[n] = _activate_phantom(initial_state, k2, n, delta/2.0);
+      }
+
+      // k4
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        k4[n] = _activate_phantom(initial_state, k3, n, delta);
+      }
+
+      // Combine all predictions into one type of input
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+        if (_g[n].get_fixed()) {
+            rk45[n] = _g[n].get_current_output();
+        } else {
+            //  weighted average velocity = 1/6 * (A1 + 2*(A2 + A3) + A4)
+            rk45[n] = (k1[n] + 2*(k2[n] + k3[n]) + k4[n]) / 6.0;
+        }
+      }
+
+      // activate
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        vertex_desc_t n = *iter;
+         io_t next_value = _activate_phantom(initial_state, rk45, n, delta);
+        _g[n].set_next_output(next_value);
+      }
+
+      // step
+      for (boost::tie(iter, iter_end) = boost::vertices(_g); iter != iter_end; ++iter) {
+        _g[*iter].step();
+      }
 
       // out
       _set_out();

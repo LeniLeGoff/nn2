@@ -1,0 +1,14 @@
+# Build directories / artifacts
+cmake-build-*/
+build/
+*.o
+*.a
+*.so
+*.dll
+*.dylib
+a.out
+
+# IDE Files
+.idea/
+CMakeLists.txt.user
+*.kdev4
