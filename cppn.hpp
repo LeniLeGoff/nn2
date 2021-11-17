@@ -20,8 +20,9 @@ namespace cppn{
 
 struct default_params{
     struct cppn{
-        static constexpr bool _mutate_connections = true;
-        static constexpr bool _mutate_neurons = true;
+        static constexpr float _mutation_rate = 0.5;
+        static constexpr float _rate_mutate_conn = 0.1;
+        static constexpr float _rate_mutate_neur = 0.1;
         static constexpr float _rate_add_neuron = 0.1;
         static constexpr float _rate_del_neuron = 0.01;
         static constexpr float _rate_add_conn = 0.1;
@@ -173,8 +174,8 @@ public:
     }
 
     void crossover(const this_t& parent, this_t& offspring){
+        offspring = *this;
         if(this->get_nb_neurons() != parent.get_nb_neurons()){
-            offspring = *this;
             return;
         }
 
@@ -198,7 +199,6 @@ public:
                 candidates.push_back(std::make_pair(v_descs1[i],v_descs2[j]));
         }
 
-        offspring = *this;
         if(candidates.empty()){
             return;
         }
@@ -211,24 +211,35 @@ public:
     }
 
     void mutate(){
-        if(Params::cppn::_mutate_connections)
-            _change_connections_noio();
-        if(Params::cppn::_mutate_neurons)
+        float prob_total = (1-Params::cppn::_mutation_rate) +
+                Params::cppn::_rate_mutate_conn +
+                Params::cppn::_rate_change_conn +
+                Params::cppn::_rate_mutate_neur +
+                Params::cppn::_rate_add_conn +
+                Params::cppn::_rate_del_conn +
+                Params::cppn::_rate_add_neuron +
+                Params::cppn::_rate_del_neuron;
+
+        std::uniform_real_distribution<> dist(0,prob_total);
+        float choice = dist(rgen_t::gen);
+
+        if(choice <= Params::cppn::_mutation_rate)
+            return;
+        if(Params::cppn::_mutation_rate < choice <= Params::cppn::_rate_mutate_conn)
+            BGL_FORALL_EDGES_T(e, this->_g, graph_t)
+                    this->_g[e].get_weight().mutate();
+
+        else if(Params::cppn::_rate_mutate_conn < choice <= Params::cppn::_rate_change_conn)
+            _change_connections();
+        else if(Params::cppn::_rate_change_conn < choice <= Params::cppn::_rate_mutate_neur)
             _change_neurons();
-
-
-        std::uniform_real_distribution<> dist(0,1);
-
-        if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
+        else if(Params::cppn::_rate_mutate_neur < choice <= Params::cppn::_rate_add_conn)
             _add_conn_nodup();
-
-        if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
+        else if(Params::cppn::_rate_add_conn < choice <= Params::cppn::_rate_del_conn)
             _del_conn();
-
-        if (dist(rgen_t::gen) < Params::cppn::_rate_add_neuron)
+        else if(Params::cppn::_rate_del_conn < choice <= Params::cppn::_rate_add_neuron)
             _add_neuron_on_conn();
-
-        if (dist(rgen_t::gen) < Params::cppn::_rate_del_neuron)
+        else if(Params::cppn::_rate_add_neuron < choice <= Params::cppn::_rate_del_neuron)
             _del_neuron();
 
     }
@@ -481,9 +492,6 @@ public:
     }
 
     void _change_connections(){
-        BGL_FORALL_EDGES_T(e, this->_g, graph_t)
-                this->_g[e].get_weight().mutate();
-
         BGL_FORALL_EDGES_T(e, this->_g, graph_t)
             if (std::uniform_real_distribution<>(0,1)(rgen_t::gen) < Params::cppn::_rate_change_conn) {
                 vertex_desc_t src = source(e, this->_g);

@@ -53,9 +53,11 @@ namespace nn2 {
     typedef IO io_t;
     typedef Pot pf_t;
     typedef Act af_t;
+
     static io_t zero() {
       return trait<IO>::zero();
     }
+
     Neuron() :
       _current_output(zero()),
       _next_output(zero()),
@@ -63,16 +65,29 @@ namespace nn2 {
       _in(-1),
       _out(-1) {
     }
+
     bool get_fixed() const {
       return _fixed;
     }
     void set_fixed(bool b = true) {
       _fixed = b;
     }
-    io_t activate() {
-      if (!_fixed)
-        _next_output = _af(_pf(_inputs) + _bias);
+
+    io_t activate(double delta) {
+      if (!_fixed) {
+        _next_output = activate_phantom(_current_output, _inputs, delta);
+      }
       return _next_output;
+    }
+
+    io_t activate_phantom(io_t current_state, const typename trait<io_t>::vector_t &inputs, double delta) const {
+        if (_fixed) return current_state;
+
+        io_t output = _af(_pf(inputs) + _bias);
+        if (_differential)
+            return current_state + (delta * output);
+        else
+            return output;
     }
 
     void init() {
@@ -88,7 +103,7 @@ namespace nn2 {
       assert(i < _inputs.size());
       _inputs[i] = in;
     }
-    const typename trait<io_t>::vector_t &get_inputs(){return _inputs;}
+    const typename trait<io_t>::vector_t &get_inputs() const {return _inputs;}
     void set_weight(unsigned i, const weight_t& w) {
       _pf.set_weight(i, w);
     }
@@ -192,11 +207,19 @@ namespace nn2 {
       return _label;
     }
 
+    bool has_differential_activation() const {
+        return _differential;
+    }
+    void set_differential_activation(bool differential) {
+        _differential = differential;
+    }
+
     // for graph algorithms
     std::string _id;
     std::string _label;
     boost::default_color_type _color;
     int _index;
+
    protected:
 
     // activation functor
@@ -216,6 +239,8 @@ namespace nn2 {
     int _in;
     // -1 if not an output of the nn, id of output otherwise
     int _out;
+    // true if the neuron should activation should be differential
+    bool _differential = false;
   };
 }
 #endif
