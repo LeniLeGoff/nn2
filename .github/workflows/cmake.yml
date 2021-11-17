@@ -38,16 +38,16 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
       
-#    - name: Test CPPN
-#      working-directory: ${{github.workspace}}/build
-#      run: ./test_cppn
-#    - name: Test CPPN Serialization
-#      working-directory: ${{github.workspace}}/build
-#      run: ./test_cppn_serialization
-#    - name: Test CPG
-#      working-directory: ${{github.workspace}}/build
-#      run: ./test_cpg
-#    - name: Test CPG2
-#      working-directory: ${{github.workspace}}/build
-#      run: ./test_cpg2
+    - name: Test CPPN
+      working-directory: ${{github.workspace}}/build
+      run: ./test_cppn nogui
+    - name: Test CPPN Serialization
+      working-directory: ${{github.workspace}}/build
+      run: ./test_cppn_serialization
+    - name: Test CPG
+      working-directory: ${{github.workspace}}/build
+      run: ./test_cpg nogui
+    - name: Test CPG2
+      working-directory: ${{github.workspace}}/build
+      run: ./test_cpg2 nogui
       
