@@ -5,7 +5,7 @@
 
 std::mt19937 nn2::rgen_t::gen;
 
-float params::cppn::_mutation_rate = 0.5;
+float params::cppn::_mutation_rate = 1;
 float params::cppn::_rate_mutate_conn = 0.1;
 float params::cppn::_rate_mutate_neur = 0.1;
 float params::cppn::_rate_add_neuron = 0.1;
@@ -14,10 +14,10 @@ float params::cppn::_rate_add_conn = 0.1;
 float params::cppn::_rate_del_conn = 0.1;
 float params::cppn::_rate_change_conn = 0.1;
 
-size_t params::cppn::_min_nb_neurons = 1;
-size_t params::cppn::_max_nb_neurons = 10;
+size_t params::cppn::_min_nb_neurons = 0;
+size_t params::cppn::_max_nb_neurons = 5;
 size_t params::cppn::_min_nb_conns = 10;
-size_t params::cppn::_max_nb_conns = 500;
+size_t params::cppn::_max_nb_conns = 100;
 
 float params::evo_float::mutation_rate = 0.1;
 float params::evo_float::cross_rate = 0;
@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
                 outs = cppn.outf();
 
                 image.at<uchar>(i,j,0) = 128*outs[0]+127;
-                image.at<uchar>(i,j,1) = 128*outs[1]+127;
-                image.at<uchar>(i,j,2) = 128*outs[2]+127;
+               // image.at<uchar>(i,j,1) = 128*outs[1]+127;
+               // image.at<uchar>(i,j,2) = 128*outs[2]+127;
             }
         }
         std::cout << "finish" << std::endl;
