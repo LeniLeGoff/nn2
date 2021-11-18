@@ -5,8 +5,9 @@
 
 std::mt19937 nn2::rgen_t::gen;
 
-bool params::cppn::_mutate_connections = true;
-bool params::cppn::_mutate_neurons = true;
+float params::cppn::_mutation_rate = 0.5;
+float params::cppn::_rate_mutate_conn = 0.1;
+float params::cppn::_rate_mutate_neur = 0.1;
 float params::cppn::_rate_add_neuron = 0.1;
 float params::cppn::_rate_del_neuron = 0.1;
 float params::cppn::_rate_add_conn = 0.1;
@@ -28,7 +29,16 @@ typedef nn2::AfCppn<nn2::cppn::AfParams<params>> af_t;
 typedef nn2::Neuron<pf_t,af_t> neuron_t;
 typedef nn2::Connection<nn2::EvoFloat<1,params>> connection_t;
 
-int main(int argc,char** argv){
+
+int main(int argc, char *argv[])
+{
+    bool gui = true;
+    for (int i=0; i<argc;i++) {
+        std::cout << "argument " << argv[i] << std::endl;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "nogui") == 0) {
+        gui = false;
+    }
 
     nn2::rgen_t::gen.seed(time(0));
 
@@ -55,9 +65,14 @@ int main(int argc,char** argv){
             }
         }
         std::cout << "finish" << std::endl;
-        cv::imshow("Random CPPN Generated Image",image);
-        cv::waitKey(0);
+        if (gui) {
+            cv::imshow("Random CPPN Generated Image", image);
+            cv::waitKey(0);
+        }
         cppn.mutate();
+    }
+    if (!gui) {
+        cv::imwrite("test_cppn_output.png", image);
     }
     return 0;
 }
