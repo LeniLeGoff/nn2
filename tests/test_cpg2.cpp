@@ -39,8 +39,15 @@ std::shared_ptr<cv::Mat> plotGraph(std::vector<T>& vals,
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
+    bool gui = true;
+    for (int i=0; i<argc;i++) {
+        std::cout << "argument " << argv[i] << std::endl;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "nogui") == 0) {
+        gui = false;
+    }
     // Create oscillator couple NN
     nn2::NN<neuron_t, connection_t> oscillator;
     oscillator.set_nb_inputs(0);
@@ -117,17 +124,21 @@ int main()
              cv::Scalar(125,125,125),
              1);
 
-    cv::imshow("Ouputs", *image);
+    if (gui) {
+        cv::imshow("Ouputs", *image);
 
-    std::cout << "press esc to close" << std::endl;
+        std::cout << "press esc to close" << std::endl;
 #define ESC 27
-    int k = -1;
-    while (k != ESC) {
-        k = cv::waitKey(0);
+        int k = -1;
+        while (k != ESC) {
+            k = cv::waitKey(0);
+        }
+#undef ESC
+    } else {
+        cv::imwrite("test_cpg2_output.png", *image);
     }
 
     return 0;
 
-#undef ESC
 #undef N_ITER
 }
