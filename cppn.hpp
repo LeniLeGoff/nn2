@@ -210,35 +210,45 @@ public:
     }
 
     void mutate(){
-        float prob_total = (1-Params::cppn::_mutation_rate) +
-                Params::cppn::_rate_mutate_conn +
-                Params::cppn::_rate_change_conn +
-                Params::cppn::_rate_mutate_neur +
-                Params::cppn::_rate_add_conn +
-                Params::cppn::_rate_del_conn +
-                Params::cppn::_rate_add_neuron +
-                Params::cppn::_rate_del_neuron;
 
-        std::uniform_real_distribution<> dist(0,prob_total);
+        std::uniform_real_distribution<> dist_0(0,1);
+        if(Params::cppn::_mutation_rate < dist_0(rgen_t::gen))
+            return;
+
+
+        auto sum = [](std::vector<float> v, int max) -> double{
+            float res = 0;
+            for(int i = 0; i < max; i++)
+                res += v[i];
+            return res;
+        };
+
+        std::vector<float> prob_v = {Params::cppn::_rate_mutate_conn,
+                Params::cppn::_rate_change_conn,
+                Params::cppn::_rate_mutate_neur,
+                Params::cppn::_rate_add_conn,
+                Params::cppn::_rate_del_conn,
+                Params::cppn::_rate_add_neuron,
+                Params::cppn::_rate_del_neuron};
+
+
+        std::uniform_real_distribution<> dist(0,sum(prob_v,prob_v.size()));
         float choice = dist(rgen_t::gen);
 
-        if(choice <= Params::cppn::_mutation_rate)
-            return;
-        if(Params::cppn::_mutation_rate < choice <= Params::cppn::_rate_mutate_conn)
+        if(choice <= prob_v[0])
             BGL_FORALL_EDGES_T(e, this->_g, graph_t)
                     this->_g[e].get_weight().mutate();
-
-        else if(Params::cppn::_rate_mutate_conn < choice <= Params::cppn::_rate_change_conn)
+        else if(prob_v[0] < choice <= sum(prob_v,2))
             _change_connections();
-        else if(Params::cppn::_rate_change_conn < choice <= Params::cppn::_rate_mutate_neur)
+        else if(sum(prob_v,2) < choice && choice <= sum(prob_v,3))
             _change_neurons();
-        else if(Params::cppn::_rate_mutate_neur < choice <= Params::cppn::_rate_add_conn)
+        else if(sum(prob_v,3) < choice && choice <= sum(prob_v,4))
             _add_conn_nodup();
-        else if(Params::cppn::_rate_add_conn < choice <= Params::cppn::_rate_del_conn)
+        else if(sum(prob_v,4) < choice && choice <= sum(prob_v,5))
             _del_conn();
-        else if(Params::cppn::_rate_del_conn < choice <= Params::cppn::_rate_add_neuron)
+        else if(sum(prob_v,5) < choice && choice <= sum(prob_v,6))
             _add_neuron_on_conn();
-        else if(Params::cppn::_rate_add_neuron < choice <= Params::cppn::_rate_del_neuron)
+        else if(sum(prob_v,6) < choice && choice <= sum(prob_v,7))
             _del_neuron();
 
     }
