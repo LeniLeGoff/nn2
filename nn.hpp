@@ -104,6 +104,7 @@ namespace nn2 {
     typedef typename C::weight_t weight_t;
     typedef typename C::io_t io_t;
 
+
     // constructor
     NN() : _neuron_counter(0), _init_done(false) {
     }
