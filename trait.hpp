@@ -93,11 +93,13 @@ struct trait<EvoFloat<Size, Params>>{
 template<typename Params>
 struct trait<nn2::EvoFloat<1, Params>>{
     typedef nn2::EvoFloat<1, Params> evo_float_t;
-    static float zero() {
-        return 0.0f;
+    static evo_float_t zero() {
+        evo_float_t ef;
+        ef.data(0,0);
+        return ef;
     }
     // a 0 initializer for vectors
-    static float zero(size_t k) {
+    static evo_float_t zero(size_t k) {
         return zero();
     }
     static size_t size(const evo_float_t&) {
