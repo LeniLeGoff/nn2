@@ -159,9 +159,6 @@ public:
         // io
         this->set_nb_inputs(_nb_inputs);
         this->set_nb_outputs(_nb_outputs);
-        BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
-          this->_g[v].set_fixed();
-        }
 
         //create the hidden layer with 4 neurons one for each activation function type and random parameters.
         std::vector<vertex_desc_t> hidden_neurons;
@@ -384,6 +381,12 @@ public:
           ofs << "[label=\"" <<  this->_g[e].get_weight() << "\"]" << std::endl;
         }
         ofs << "}" << std::endl;
+    }
+
+    void set_outputs_fixed(){
+        BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
+          this->_g[v].set_fixed();
+        }
     }
 
 private:
