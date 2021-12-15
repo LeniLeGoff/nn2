@@ -160,6 +160,16 @@ public:
         this->set_nb_inputs(_nb_inputs);
         this->set_nb_outputs(_nb_outputs);
 
+        for(const vertex_desc_t &v : this->_outputs){
+            cppn::AfParams<Params> af_params;
+            af_params.type = 3;
+            af_params.p0.random();
+            af_params.p1.random();
+            this->_g[v].set_afparams(af_params);
+            this->_g[v].get_pfparams().random();
+
+        }
+
         //create the hidden layer with 4 neurons one for each activation function type and random parameters.
         std::vector<vertex_desc_t> hidden_neurons;
         for(size_t i = 0; i < 4; ++i){
