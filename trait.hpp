@@ -69,6 +69,10 @@ struct trait {
         assert(t.size() == 1);
         return t.data(0);
     }
+    static T opposite(const T& t){
+        t.data(0) = -t.data(0);
+        return t;
+    }
 };
 
 template<int Size, typename Params>
@@ -88,6 +92,14 @@ struct trait<EvoFloat<Size, Params>>{
     static std::vector<float> single_value(const evo_float_t& t) {
         return t.data();
     }
+    static evo_float_t opposite(const evo_float_t& t) {
+        evo_float_t oppo;
+        for(int i = 0; i < Size; i++){
+            oppo.data(i,-t.data(i));
+        }
+        return oppo;
+    }
+
 };
 
 template<typename Params>
@@ -108,6 +120,11 @@ struct trait<nn2::EvoFloat<1, Params>>{
     static float single_value(const evo_float_t& t) {
         return t.data(0);
     }
+    static evo_float_t opposite(const evo_float_t& t) {
+        evo_float_t oppo;
+        oppo.data(0,-t.data(0));
+        return oppo;
+    }
 };
 
 
@@ -126,6 +143,9 @@ struct trait<params::Dummy> {
     static size_t size(const params::Dummy&) {
         return 0;
     }
+    static params::Dummy opposite(const params::Dummy& p) {
+        return p;
+    }
 };
 
 
@@ -139,11 +159,14 @@ struct trait<double> {
     static vector_t zero(size_t k) {
         return Eigen::VectorXd::Zero(k);
     }
-    static float single_value(const float& t) {
+    static float single_value(const double& t) {
         return t;
     }
-    static size_t size(const float& t) {
+    static size_t size(const double& t) {
         return 1;
+    }
+    static double opposite(const double& t) {
+        return -t;
     }
 };
 
@@ -164,6 +187,9 @@ struct trait<float> {
     static size_t size(const float& t) {
         return 1;
     }
+    static float opposite(const float& t) {
+        return -t;
+    }
 };
 
 template<>
@@ -180,6 +206,10 @@ struct trait<std::pair<float, float> > {
     }
     static size_t size(const std::pair<float, float>& t) {
         return 2;
+    }
+    static std::pair<float, float> opposite(const std::pair<float, float>& t) {
+        std::pair<float, float> oppo = std::make_pair(-t.first,-t.second);
+        return oppo;
     }
 };
 

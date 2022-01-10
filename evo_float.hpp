@@ -152,6 +152,7 @@ public:
     }
 
 
+
 protected:
     std::vector<float> _data;
 
@@ -168,7 +169,6 @@ protected:
 #endif
     }
 };
-
 
 
 // partial specialization for operators

@@ -167,7 +167,6 @@ public:
             af_params.p1.random();
             this->_g[v].set_afparams(af_params);
             this->_g[v].get_pfparams().random();
-
         }
 
         //create the hidden layer with 4 neurons one for each activation function type and random parameters.
