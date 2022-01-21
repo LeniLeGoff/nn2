@@ -123,6 +123,7 @@ namespace nn2 {
       _outf.resize(o.get_nb_outputs());
       _init_io();
       _init_done = o._init_done;
+      _init_balanced();
       return *this;
     }
     // init
@@ -184,8 +185,7 @@ namespace nn2 {
             std::pair<edge_desc_t, bool> f = add_edge(v, u, _g);
             _g[f.first].set_weight(trait<weight_t>().opposite(weight));
             _g[f.first].set_balanced();
-            _balanced_edges.emplace(e.first,f.first);
-            _balanced_edges.emplace(f.first,e.first);
+            _balanced_edges.push_back(std::make_pair(e.first,f.first));
         }
       }
       return e.second;
@@ -235,10 +235,20 @@ namespace nn2 {
 #endif
       assert(num_edges(_g) == ws.size());
       size_t k = 0;
+      edge_desc_t f;
       BGL_FORALL_EDGES_T(e, _g, graph_t){
           _g[e].set_weight(ws[k]);
           if(_g[e].is_balanced()){
-              edge_desc_t f = _balanced_edges[e];
+              for(const auto& pair: _balanced_edges){
+                  if(pair.first.m_source == e.m_source){
+                      f = pair.second;
+                      break;
+                  }
+                  if(pair.second.m_source == e.m_source){
+                    f = pair.first;
+                    break;
+                  }
+              }
               _g[f].set_weight(-ws[k]);
           }
           k++;
@@ -541,7 +551,7 @@ namespace nn2 {
     graph_t _g;
     vertex_list_t _inputs;
     vertex_list_t _outputs;
-    std::map<edge_desc_t,edge_desc_t> _balanced_edges;
+    std::vector<std::pair<edge_desc_t,edge_desc_t>> _balanced_edges;
     std::vector<io_t> _outf;
     int _neuron_counter;
     bool _init_done;
@@ -771,6 +781,24 @@ namespace nn2 {
           _outputs[_g[v].get_out()] = v;
         }
       }
+    }
+    void _init_balanced(){
+        BGL_FORALL_EDGES_T(e,_g,graph_t){
+            if(_g[e].is_balanced()){
+                if([&]() -> bool{
+                   for(const auto &pair: _balanced_edges)
+                        if(pair.first == e || pair.second == e)
+                            return true;
+                    return false;}())
+                    continue;
+                BGL_FORALL_EDGES_T(f,_g,graph_t){
+                    if(e.m_source == f.m_target && e.m_target == f.m_source){
+                       _balanced_edges.push_back(std::make_pair(e,f));
+                       break;
+                    }
+                }
+            }
+        }
     }
   };
 }
