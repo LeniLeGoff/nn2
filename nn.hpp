@@ -123,6 +123,7 @@ namespace nn2 {
       _outf.resize(o.get_nb_outputs());
       _init_io();
       _init_done = o._init_done;
+      _init_balanced();
       return *this;
     }
     // init
@@ -173,29 +174,38 @@ namespace nn2 {
 
     bool add_connection(const vertex_desc_t& u,
                         const vertex_desc_t& v,
-                        weight_t weight) {
+                        weight_t weight,
+                        bool balanced = false) //if true create two ways connection with opposite weights
+    {
       std::pair<edge_desc_t, bool> e = add_edge(u, v, _g);
-      if (e.second)
+      if (e.second){
         _g[e.first].set_weight(weight);
+        if(balanced){
+            _g[e.first].set_balanced();
+            std::pair<edge_desc_t, bool> f = add_edge(v, u, _g);
+            _g[f.first].set_weight(trait<weight_t>().opposite(weight));
+            _g[f.first].set_balanced();
+            _balanced_edges.push_back(std::make_pair(e.first,f.first));
+        }
+      }
       return e.second;
     }
     // special version when you need to increase weight
-    bool add_connection_w(const vertex_desc_t& u,
-                          const vertex_desc_t& v,
-                          weight_t weight) {
-      std::pair<edge_desc_t, bool> e = add_edge(u, v, _g);
-      if (e.second)
-        _g[e.first].set_weight(weight);
-      else
-        _g[e.first].set_weight(_g[e.first].get_weight() + weight);
-      return e.second;
-    }
+//    bool add_connection_w(const vertex_desc_t& u,
+//                          const vertex_desc_t& v,
+//                          weight_t weight) {
+//      std::pair<edge_desc_t, bool> e = add_edge(u, v, _g);
+//      if (e.second)
+//        _g[e.first].set_weight(weight);
+//      else
+//        _g[e.first].set_weight(_g[e.first].get_weight() + weight);
+//      return e.second;
+//    }
 
     void create_oscillator_connection(const vertex_desc_t& u,
                                       const vertex_desc_t& v,
                                       weight_t weight) {
-        add_connection(u, v, weight);
-        add_connection(v, u, -weight);
+        add_connection(u, v, weight,true); //add balanced connection (two ways with opposite weights)
         get_neuron_by_vertex(u).set_differential_activation(true);
         get_neuron_by_vertex(v).set_differential_activation(true);
     }
@@ -225,8 +235,24 @@ namespace nn2 {
 #endif
       assert(num_edges(_g) == ws.size());
       size_t k = 0;
-      BGL_FORALL_EDGES_T(e, _g, graph_t)
-      _g[e].set_weight(ws[k++]);
+      edge_desc_t f;
+      BGL_FORALL_EDGES_T(e, _g, graph_t){
+          _g[e].set_weight(ws[k]);
+          if(_g[e].is_balanced()){
+              for(const auto& pair: _balanced_edges){
+                  if(pair.first.m_source == e.m_source){
+                      f = pair.second;
+                      break;
+                  }
+                  if(pair.second.m_source == e.m_source){
+                    f = pair.first;
+                    break;
+                  }
+              }
+              _g[f].set_weight(-ws[k]);
+          }
+          k++;
+      }
     }
 
     void set_all_biases(const std::vector<typename N::io_t>& bs) {
@@ -433,6 +459,7 @@ namespace nn2 {
       BGL_FORALL_EDGES_T(e, this->_g, graph_t) {
         if (fabs(_g[e].get_weight()) < threshold)
           to_remove.push_back(e);
+
       }
       for (size_t i = 0; i < to_remove.size(); ++i)
         remove_edge(to_remove[i], this->_g);
@@ -524,6 +551,7 @@ namespace nn2 {
     graph_t _g;
     vertex_list_t _inputs;
     vertex_list_t _outputs;
+    std::vector<std::pair<edge_desc_t,edge_desc_t>> _balanced_edges;
     std::vector<io_t> _outf;
     int _neuron_counter;
     bool _init_done;
@@ -753,6 +781,24 @@ namespace nn2 {
           _outputs[_g[v].get_out()] = v;
         }
       }
+    }
+    void _init_balanced(){
+        BGL_FORALL_EDGES_T(e,_g,graph_t){
+            if(_g[e].is_balanced()){
+                if([&]() -> bool{
+                   for(const auto &pair: _balanced_edges)
+                        if(pair.first == e || pair.second == e)
+                            return true;
+                    return false;}())
+                    continue;
+                BGL_FORALL_EDGES_T(f,_g,graph_t){
+                    if(e.m_source == f.m_target && e.m_target == f.m_source){
+                       _balanced_edges.push_back(std::make_pair(e,f));
+                       break;
+                    }
+                }
+            }
+        }
     }
   };
 }

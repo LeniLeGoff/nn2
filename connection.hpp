@@ -36,6 +36,7 @@
 #define _NN_CONNECTiON_HPP
 
 #include "params.hpp"
+#include <boost/graph/graph_traits.hpp>
 
 namespace nn2 {
   template<typename W = double, typename IO = double>
@@ -51,8 +52,11 @@ namespace nn2 {
     void set_weight(const weight_t& w) {
       _weight = w;
     }
+    void set_balanced(bool t = true){_balanced = t;}
+    bool is_balanced(){return _balanced;}
    protected:
     weight_t _weight;
+    bool _balanced = false;
   };
 }
 

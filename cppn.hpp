@@ -147,11 +147,53 @@ public:
         _nb_inputs(nb_inputs), _nb_outputs(nb_outputs)
     {}
 
+
     void _random_neuron_params() {
         BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
             this->_g[v].get_pfparams().random();
             this->_g[v].get_afparams().random();
         }
+    }
+
+    void build_fixed_structure(){
+        // io
+        this->set_nb_inputs(_nb_inputs);
+        this->set_nb_outputs(_nb_outputs);
+
+        for(const vertex_desc_t &v : this->_outputs){
+            cppn::AfParams<Params> af_params;
+            af_params.type = 3;
+            af_params.p0.random();
+            af_params.p1.random();
+            this->_g[v].set_afparams(af_params);
+            this->_g[v].get_pfparams().random();
+        }
+
+        //create the hidden layer with 4 neurons one for each activation function type and random parameters.
+        std::vector<vertex_desc_t> hidden_neurons;
+        for(size_t i = 0; i < 4; ++i){
+            hidden_neurons.push_back(this->add_neuron("n"));
+            cppn::AfParams<Params> af_params;
+            af_params.type = i;
+            af_params.p0.random();
+            af_params.p1.random();
+            this->_g[hidden_neurons.back()].set_afparams(af_params);
+            this->_g[hidden_neurons.back()].get_pfparams().random();
+        }
+
+        //fully connect input to hidden and hidden to input
+        this->full_connect(this->_inputs,hidden_neurons,trait<typename N::weight_t>::zero());
+        this->full_connect(hidden_neurons,this->_outputs,trait<typename N::weight_t>::zero());
+
+        //interconnect all hidden neurons;
+        for(vertex_desc_t &v : hidden_neurons)
+            for(vertex_desc_t &w : hidden_neurons)
+                if(v != w)
+                    this->add_connection(v,w,trait<typename N::weight_t>::zero());
+
+        //Start with random weights
+        BGL_FORALL_EDGES_T(e, this->_g, graph_t)
+                this->_g[e].get_weight().random();
     }
 
     void random(){
@@ -175,9 +217,6 @@ public:
 
     void crossover(const this_t& parent, this_t& offspring){
         offspring = *this;
-        if(this->get_nb_neurons() != parent.get_nb_neurons()){
-            return;
-        }
 
         std::vector<int> degrees1;
         std::vector<vertex_desc_t> v_descs1;
@@ -352,6 +391,12 @@ public:
           ofs << "[label=\"" <<  this->_g[e].get_weight() << "\"]" << std::endl;
         }
         ofs << "}" << std::endl;
+    }
+
+    void set_outputs_fixed(){
+        BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
+          this->_g[v].set_fixed();
+        }
     }
 
 private:
