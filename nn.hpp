@@ -351,8 +351,8 @@ namespace nn2 {
     }
 
     // step activation
-    void step(const std::vector<io_t>& inputs) {
-      _step(inputs);
+    void step(const std::vector<io_t>& inputs, double delta = 0.0) {
+         _step(inputs);
     }
 
     /**
@@ -392,6 +392,7 @@ namespace nn2 {
     unsigned get_nb_neurons() const {
       return num_vertices(_g);
     }
+
 
     // subnns
     void remove_subnn(const std::set<vertex_desc_t>& subnn) {
