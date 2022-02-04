@@ -20,6 +20,9 @@ namespace cppn{
 
 struct default_params{
     struct cppn{
+        static constexpr int _mutation_type = 0;
+        static constexpr bool _mutate_connections = true;
+        static constexpr bool _mutate_neurons = true;
         static constexpr float _mutation_rate = 0.5;
         static constexpr float _rate_mutate_conn = 0.1;
         static constexpr float _rate_mutate_neur = 0.1;
@@ -250,6 +253,36 @@ public:
     }
 
     void mutate(){
+        if(Params::cppn::_mutation_type =! 1)
+            mutate_uniform();
+        else if(Params::cppn::_mutation_type == 1)
+            mutate_roulette_wheel();
+
+    }
+
+    void mutate_uniform(){
+        if(Params::cppn::_mutate_connections)
+            _change_connections_noio();
+        if(Params::cppn::_mutate_neurons)
+            _change_neurons();
+
+
+        std::uniform_real_distribution<> dist(0,1);
+
+        if (dist(rgen_t::gen) < Params::cppn::_rate_add_conn)
+            _add_conn_nodup();
+
+        if (dist(rgen_t::gen) < Params::cppn::_rate_del_conn)
+            _del_conn();
+
+        if (dist(rgen_t::gen) < Params::cppn::_rate_add_neuron)
+            _add_neuron_on_conn();
+
+        if (dist(rgen_t::gen) < Params::cppn::_rate_del_neuron)
+            _del_neuron();
+    }
+
+    void mutate_roulette_wheel(){
 
         std::uniform_real_distribution<> dist_0(0,1);
         if(Params::cppn::_mutation_rate < dist_0(rgen_t::gen))

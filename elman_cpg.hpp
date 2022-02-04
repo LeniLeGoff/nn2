@@ -143,11 +143,11 @@ namespace nn2 {
     unsigned get_nb_inputs() const {
       return this->_inputs.size() - 1;
     }
-    void step(const std::vector<io_t>& in) {
+    void step(const std::vector<io_t>& in,double delta = 0.0) {
       assert(in.size() == this->get_nb_inputs());
       std::vector<io_t> inf = in;
       inf.push_back(1.0f);
-      nn_t::_step(inf);
+      nn_t::_step_integrate(inf,delta);
     }
    protected:
 
