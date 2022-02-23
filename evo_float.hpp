@@ -63,6 +63,8 @@ struct default_params{
         static constexpr cross_over_t cross_over_type = no_cross_over;
         static constexpr float eta_m = 15.0f;
         static constexpr float eta_c = 15.0f;
+        static constexpr float min = -1;
+        static constexpr float max = 1;
     };
 };
 
@@ -80,7 +82,6 @@ struct CrossOver_f {
 };
 }
 
-/// in range [0;1]
 template<int Size, typename Params>
 class EvoFloat
 {
@@ -187,8 +188,8 @@ struct Mutation_f<Ev, polynomial> {
         assert(!std::isnan(delta_i));
         assert(!std::isinf(delta_i));
         float f = ev.data(i) + delta_i;
-        if(f < 0) f = 0;
-        else if(i > 1) f = 1;
+        if(f < 0) f = Ev::params_t::evo_float::min;
+        else if(f > 1) f = Ev::params_t::evo_float::max;
         ev.data(i, f);
     }
 };
@@ -201,8 +202,8 @@ struct Mutation_f<Ev, gaussian> {
         float f = ev.data(i)
                 + std::normal_distribution<>(0, sigma * sigma)(rgen_t::gen);
 
-        if(f < 0) f = 0;
-        else if(i > 1) f = 1;
+        if(f < 0) f = Ev::params_t::evo_float::min;
+        else if(f > 1) f = Ev::params_t::evo_float::max;
         ev.data(i, f);
     }
 };
@@ -213,8 +214,8 @@ struct Mutation_f<Ev, uniform> {
         const float max = Ev::params_t::evo_float::max;
         float f = ev.data(i)
                 + std::uniform_real_distribution<>(0,max)(rgen_t::gen) - max / 2.0f;
-        if(f < 0) f = 0;
-        else if(i > 1) f = 1;
+        if(f < 0) f = Ev::params_t::evo_float::min;
+        else if(f > 1) f = Ev::params_t::evo_float::max;
         ev.data(i, f);
     }
 };
