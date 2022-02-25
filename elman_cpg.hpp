@@ -69,7 +69,24 @@ namespace nn2 {
     typedef C conn_t;
 
     ElmanCPG(){}
-
+    /**
+    * @brief ElmanCPG
+    * @param nb_inputs
+    * @param nb_hidden
+    * @param nb_outputs
+    * @param joint_substrate a self-referencing connection vector.
+    * -1 values indicate that they are attached to the head.
+    * other values indicate the index that joint is attached to.
+    * E.g. [-1,-1,-1,0,1,2] you have the first 3 joints attached to the head and the other connected as following:
+    * 3->0  4->1  5->2 Example: {-1,-1,-1,0,1,2}
+    *
+    *
+    *               |--------|
+    *               |        |__*--
+    *               |        |
+    *               |        |
+    *               |--------|
+    */
     ElmanCPG(size_t nb_inputs,
           size_t nb_hidden,
           size_t nb_outputs,
@@ -78,7 +95,7 @@ namespace nn2 {
 
       //order of outputs: first wheels then joints
 
-        // neurons
+      // neurons
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
       for (size_t i = 0; i < nb_hidden; ++i)
@@ -109,7 +126,8 @@ namespace nn2 {
       for (size_t i = 0; i < this->get_nb_outputs(); ++i)
         this->add_connection(this->get_input(last), this->get_output(i),
                              trait<typename N::weight_t>::zero());
-      // Create CPGs
+
+      // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
         auto neuron_a1 = this->add_neuron("A1"); //output of oscillator
         auto neuron_b1 = this->add_neuron("B1");
@@ -119,7 +137,8 @@ namespace nn2 {
         this->add_connection(neuron_a1,this->_outputs[i+(nb_outputs-joint_substrate.size())],//wheels first
                 trait<typename N::weight_t>::zero()); // connection to the outputs
       }
-      // Create CPG connections
+
+      // Connect oscillators with each others
       for(int i = 0; i < joint_substrate.size(); i++){
           if(joint_substrate.at(i) < 0){
               for(int j = 0; j < joint_substrate.size(); j++){
