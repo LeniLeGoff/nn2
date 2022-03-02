@@ -6,6 +6,9 @@
 std::mt19937 nn2::rgen_t::gen;
 
 float params::cppn::_mutation_rate = 1;
+float params::cppn::_mutation_type = 0;
+bool params::cppn::_mutate_connections = true;
+bool params::cppn::_mutate_neurons = true;
 float params::cppn::_rate_mutate_conn = 0.1;
 float params::cppn::_rate_mutate_neur = 0.1;
 float params::cppn::_rate_add_neuron = 0.1;

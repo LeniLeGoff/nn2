@@ -33,9 +33,9 @@ struct default_params{
         static constexpr float _rate_change_conn = 0.1;
         static constexpr float _rate_crossover = 0.1;
 
-        static constexpr size_t _min_nb_neurons = 2;
-        static constexpr size_t _max_nb_neurons = 30;
-        static constexpr size_t _min_nb_conns = 1;
+        static constexpr size_t _min_nb_neurons = 0;
+        static constexpr size_t _max_nb_neurons = 5;
+        static constexpr size_t _min_nb_conns = 10;
         static constexpr size_t _max_nb_conns = 100;
     };
     struct evo_float{
@@ -149,7 +149,8 @@ public:
     CPPN(size_t nb_inputs, size_t nb_outputs) :
         _nb_inputs(nb_inputs), _nb_outputs(nb_outputs)
     {}
-
+    CPPN(const CPPN<N,C,Params> &cppn) :
+        nn_t(cppn), _nb_inputs(cppn._nb_inputs), _nb_outputs(cppn._nb_outputs){}
 
     void _random_neuron_params() {
         BGL_FORALL_VERTICES_T(v, this->_g, graph_t) {
@@ -360,6 +361,8 @@ public:
         a & conns;
         a & inputs;
         a & outputs;
+        a & _nb_inputs;
+        a & _nb_outputs;
     }
 
     template<typename Archive>
@@ -379,6 +382,8 @@ public:
         a & conns;
         a & inputs;
         a & outputs;
+        a & _nb_inputs;
+        a & _nb_outputs;
 
         assert(pfparams.size() == afparams.size());
 

@@ -4,6 +4,9 @@
 struct params{
     struct cppn{
         static float _mutation_rate;
+        static float _mutation_type;
+        static bool _mutate_connections;
+        static bool _mutate_neurons;
         static float _rate_mutate_conn;
         static float _rate_mutate_neur;
         static float _rate_add_neuron;
@@ -24,6 +27,8 @@ struct params{
         static constexpr nn2::evo_float::cross_over_t cross_over_type = nn2::evo_float::no_cross_over;
         static float eta_m;
         static float eta_c;
+        static constexpr float min = -1;
+        static constexpr float max = 1;
     };
 };
 
