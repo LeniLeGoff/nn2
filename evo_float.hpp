@@ -57,14 +57,14 @@ enum cross_over_t { recombination = 0, sbx, no_cross_over };
 
 struct default_params{
     struct evo_float{
-        static constexpr float mutation_rate = 0.1f;
-        static constexpr float cross_rate = 0.0f;
+        static constexpr double mutation_rate = 0.1f;
+        static constexpr double cross_rate = 0.0f;
         static constexpr mutation_t mutation_type = polynomial;
         static constexpr cross_over_t cross_over_type = no_cross_over;
-        static constexpr float eta_m = 15.0f;
-        static constexpr float eta_c = 15.0f;
-        static constexpr float min = -1;
-        static constexpr float max = 1;
+        static constexpr double eta_m = 15.0f;
+        static constexpr double eta_c = 15.0f;
+        static constexpr double min = -1;
+        static constexpr double max = 1;
     };
 };
 
@@ -114,22 +114,22 @@ public:
         _check_invariant();
     }
     void random() {
-        BOOST_FOREACH(float &v, this->_data) v = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
+        BOOST_FOREACH(double &v, this->_data) v = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
         _check_invariant();
     }
     //@}
 
-    const std::vector<float>& data() const {
+    const std::vector<double>& data() const {
       return this->_data;
     }
-    float data(size_t i) const {
+    double data(size_t i) const {
       assert(this->_data.size());
       assert(i < this->_data.size());
       assert(!std::isinf(this->_data[i]));
       assert(!std::isnan(this->_data[i]));
       return this->_data[i];
     }
-    void  data(size_t i, float v) {
+    void  data(size_t i, double v) {
       assert(this->_data.size());
       assert(i < this->_data.size());
       assert(!std::isinf(v));
@@ -155,7 +155,7 @@ public:
 
 
 protected:
-    std::vector<float> _data;
+    std::vector<double> _data;
 
     evo_float::Mutation_f<this_t, Params::evo_float::mutation_type> _mutation_op;
     evo_float::CrossOver_f<this_t, Params::evo_float::cross_over_type> _cross_over_op;
@@ -179,15 +179,15 @@ namespace evo_float {
 template<typename Ev>
 struct Mutation_f<Ev, polynomial> {
     void operator()(Ev& ev, size_t i) {
-        const float eta_m = Ev::params_t::evo_float::eta_m;
+        const double eta_m = Ev::params_t::evo_float::eta_m;
         assert(eta_m != -1.0f);
-        float ri = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
-        float delta_i = ri < 0.5 ?
+        double ri = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
+        double delta_i = ri < 0.5 ?
                     pow(2.0 * ri, 1.0 / (eta_m + 1.0)) - 1.0 :
                     1 - pow(2.0 * (1.0 - ri), 1.0 / (eta_m + 1.0));
         assert(!std::isnan(delta_i));
         assert(!std::isinf(delta_i));
-        float f = ev.data(i) + delta_i;
+        double f = ev.data(i) + delta_i;
         if(f < 0) f = Ev::params_t::evo_float::min;
         else if(f > 1) f = Ev::params_t::evo_float::max;
         ev.data(i, f);
@@ -198,8 +198,8 @@ struct Mutation_f<Ev, polynomial> {
 template<typename Ev>
 struct Mutation_f<Ev, gaussian> {
     void operator()(Ev& ev, size_t i) {
-        const float sigma = Ev::params_t::evo_float::sigma;
-        float f = ev.data(i)
+        const double sigma = Ev::params_t::evo_float::sigma;
+        double f = ev.data(i)
                 + std::normal_distribution<>(0, sigma * sigma)(rgen_t::gen);
 
         if(f < 0) f = Ev::params_t::evo_float::min;
@@ -211,8 +211,8 @@ struct Mutation_f<Ev, gaussian> {
 template<typename Ev>
 struct Mutation_f<Ev, uniform> {
     void operator()(Ev& ev, size_t i) {
-        const float max = Ev::params_t::evo_float::max;
-        float f = ev.data(i)
+        const double max = Ev::params_t::evo_float::max;
+        double f = ev.data(i)
                 + std::uniform_real_distribution<>(0,max)(rgen_t::gen) - max / 2.0f;
         if(f < 0) f = Ev::params_t::evo_float::min;
         else if(f > 1) f = Ev::params_t::evo_float::max;
@@ -254,30 +254,30 @@ struct CrossOver_f<Ev, no_cross_over> {
 template<typename Ev>
 struct CrossOver_f<Ev, sbx> {
     void operator()(const Ev& f1, const Ev& f2, Ev &child1, Ev &child2) {
-        const float eta_c = Ev::params_t::evo_float::eta_c;
+        const double eta_c = Ev::params_t::evo_float::eta_c;
         assert(eta_c != -1);
         for (unsigned int i = 0; i < f1.size(); i++) {
-            float y1 = std::min(f1.data(i), f2.data(i));
-            float y2 = std::max(f1.data(i), f2.data(i));
-            const float yl = 0.0;
-            const float yu = 1.0;
-            if (fabs(y1 - y2) > std::numeric_limits<float>::epsilon()) {
-                float rand = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
-                float beta = 1.0 + (2.0 * (y1 - yl) / (y2 - y1));
-                float alpha = 2.0 - pow(beta, -(eta_c + 1.0));
-                float betaq = 0;
+            double y1 = std::min(f1.data(i), f2.data(i));
+            double y2 = std::max(f1.data(i), f2.data(i));
+            const double yl = 0.0;
+            const double yu = 1.0;
+            if (fabs(y1 - y2) > std::numeric_limits<double>::epsilon()) {
+                double rand = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
+                double beta = 1.0 + (2.0 * (y1 - yl) / (y2 - y1));
+                double alpha = 2.0 - pow(beta, -(eta_c + 1.0));
+                double betaq = 0;
                 if (rand <= (1.0 / alpha))
                     betaq = pow((rand * alpha), (1.0 / (eta_c + 1.0)));
                 else
                     betaq = pow ((1.0 / (2.0 - rand * alpha)) , (1.0 / (eta_c + 1.0)));
-                float c1 = 0.5 * ((y1 + y2) - betaq * (y2 - y1));
+                double c1 = 0.5 * ((y1 + y2) - betaq * (y2 - y1));
                 beta = 1.0 + (2.0 * (yu - y2) / (y2 - y1));
                 alpha = 2.0 - pow(beta, -(eta_c + 1.0));
                 if (rand <= (1.0 / alpha))
                     betaq = pow ((rand * alpha), (1.0 / (eta_c + 1.0)));
                 else
                     betaq = pow ((1.0/(2.0 - rand * alpha)), (1.0 / (eta_c + 1.0)));
-                float c2 = 0.5 * ((y1 + y2) + betaq * (y2 - y1));
+                double c2 = 0.5 * ((y1 + y2) + betaq * (y2 - y1));
                 if(c1 < yl) c1 = yl;
                 else if(c1 > yu) c1 = yu;
                 if(c2 < yl) c2 = yl;

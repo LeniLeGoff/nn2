@@ -23,15 +23,15 @@ struct default_params{
         static constexpr int _mutation_type = 0;
         static constexpr bool _mutate_connections = true;
         static constexpr bool _mutate_neurons = true;
-        static constexpr float _mutation_rate = 0.5;
-        static constexpr float _rate_mutate_conn = 0.1;
-        static constexpr float _rate_mutate_neur = 0.1;
-        static constexpr float _rate_add_neuron = 0.1;
-        static constexpr float _rate_del_neuron = 0.01;
-        static constexpr float _rate_add_conn = 0.1;
-        static constexpr float _rate_del_conn = 0.01;
-        static constexpr float _rate_change_conn = 0.1;
-        static constexpr float _rate_crossover = 0.1;
+        static constexpr double _mutation_rate = 0.5;
+        static constexpr double _rate_mutate_conn = 0.1;
+        static constexpr double _rate_mutate_neur = 0.1;
+        static constexpr double _rate_add_neuron = 0.1;
+        static constexpr double _rate_del_neuron = 0.01;
+        static constexpr double _rate_add_conn = 0.1;
+        static constexpr double _rate_del_conn = 0.01;
+        static constexpr double _rate_change_conn = 0.1;
+        static constexpr double _rate_crossover = 0.1;
 
         static constexpr size_t _min_nb_neurons = 0;
         static constexpr size_t _max_nb_neurons = 5;
@@ -39,12 +39,12 @@ struct default_params{
         static constexpr size_t _max_nb_conns = 100;
     };
     struct evo_float{
-        static constexpr float mutation_rate = 0.1f;
-        static constexpr float cross_rate = 0.0f;
+        static constexpr double mutation_rate = 0.1f;
+        static constexpr double cross_rate = 0.0f;
         static constexpr nn2::evo_float::mutation_t mutation_type = nn2::evo_float::polynomial;
         static constexpr nn2::evo_float::cross_over_t cross_over_type = nn2::evo_float::no_cross_over;
-        static constexpr float eta_m = 15.0f;
-        static constexpr float eta_c = 15.0f;
+        static constexpr double eta_m = 15.0f;
+        static constexpr double eta_c = 15.0f;
     };
 };
 
@@ -89,7 +89,7 @@ template <typename Params>
 struct AfCppn : public Af<Params> {
     typedef AfCppn<Params> this_t;
     typedef Params params_t;
-    float operator() (float p) const {
+    double operator() (double p) const {
         switch (this->_params.type) {
         case cppn::sine:
             return sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
@@ -98,7 +98,7 @@ struct AfCppn : public Af<Params> {
         case cppn::gaussian:
             return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
         case cppn::linear:
-            return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0f), 3.0f) / 3.0f;
+            return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0), 3.0) / 3.0;
 //        case cppn::cube:
 //            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
 //        case cppn::polynome:
@@ -291,7 +291,7 @@ public:
 
 
         auto sum = [](std::vector<float> v, int max) -> double{
-            float res = 0;
+            double res = 0;
             for(int i = 0; i < max; i++)
                 res += v[i];
             return res;
@@ -307,7 +307,7 @@ public:
 
 
         std::uniform_real_distribution<> dist(0,sum(prob_v,prob_v.size()));
-        float choice = dist(rgen_t::gen);
+        double choice = dist(rgen_t::gen);
 
         if(choice <= prob_v[0])
             BGL_FORALL_EDGES_T(e, this->_g, graph_t)
