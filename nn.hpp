@@ -127,7 +127,7 @@ namespace nn2 {
       return *this;
     }
     // init
-    void init() {
+    virtual void init() {
       _init();
     }
     // set id for inputs and outputs

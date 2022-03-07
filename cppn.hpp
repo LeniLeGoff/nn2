@@ -45,6 +45,8 @@ struct default_params{
         static constexpr nn2::evo_float::cross_over_t cross_over_type = nn2::evo_float::no_cross_over;
         static constexpr double eta_m = 15.0f;
         static constexpr double eta_c = 15.0f;
+        static constexpr double max = 1;
+        static constexpr double min = -1;
     };
 };
 
@@ -157,6 +159,11 @@ public:
             this->_g[v].get_pfparams().random();
             this->_g[v].get_afparams().random();
         }
+    }
+
+    void init() override{
+        this->_init();
+        this->set_all_biases(std::vector<double>(this->get_nb_neurons(),0));
     }
 
     void build_fixed_structure(){

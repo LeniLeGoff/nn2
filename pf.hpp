@@ -96,8 +96,7 @@ namespace nn2 {
       //_w_cache.dot(inputs)<<std::endl;
       if (inputs.size() == 0)
         return 0.0f;
-      float res = _w_cache.dot(inputs);
-      return res;
+      return _w_cache.dot(inputs);
     }
    protected:
     trait<double>::vector_t _w_cache;

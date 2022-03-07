@@ -90,7 +90,7 @@ public:
     typedef EvoFloat<Size, Params> this_t;
 
     EvoFloat() : _data(Size){
-        std::fill(_data.begin(), _data.end(), 0.5f);
+        std::fill(_data.begin(), _data.end(), (Params::evo_float::min + Params::evo_float::max)/2.);
     }
 
     //@{
