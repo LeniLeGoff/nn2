@@ -261,7 +261,7 @@ public:
     }
 
     void mutate(){
-        if(Params::cppn::_mutation_type =! 1)
+        if(Params::cppn::_mutation_type != 1)
             mutate_uniform();
         else if(Params::cppn::_mutation_type == 1)
             mutate_roulette_wheel();
