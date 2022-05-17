@@ -192,7 +192,29 @@ namespace nn2 {
         + 1/2*PrimaryJoints*(PrimaryJoints - 1) + SecondaryJoints*2 + PrimaryJoints; // connection of the oscillators
       const int nb_biases = NbInputs + NbHidden + Wheels + (PrimaryJoints+SecondaryJoints)*3;
     };
+    struct count_t {
+        int nb_inputs;
+        int nb_outputs;
+        int nb_hidden;
+        int nb_weights;
+        int nb_biases;
+        count_t(int NbInputs,  int NbHidden,int Wheels,int PrimaryJoints, int SecondaryJoints){
+            nb_inputs = NbInputs + 1; // bias is an input
+            nb_outputs = Wheels + PrimaryJoints + SecondaryJoints;;
+            nb_hidden = NbHidden;
+            nb_weights =
+                    nb_inputs * nb_hidden // input to hidden (full)
+                    + nb_hidden * nb_outputs // hidden to output (full)
+                    + nb_hidden // hidden to context (1-1)
+                    + nb_hidden // context to itself (1-1)
+                    + nb_hidden * nb_hidden // context to hidden (full)
+                    + nb_hidden // bias context
+                    + nb_outputs // bias outputs
+                    + 1/2*PrimaryJoints*(PrimaryJoints - 1) + SecondaryJoints*2 + PrimaryJoints; // connection of the oscillators
+            nb_biases = NbInputs + NbHidden + Wheels + (PrimaryJoints+SecondaryJoints)*3;
+        }
 
+    };
   }
 }
 

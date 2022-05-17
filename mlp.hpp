@@ -102,7 +102,24 @@ namespace nn2 {
         + nb_outputs; // bias outputs
       const int nb_biases = NbInputs + NbHidden + NbOutputs;
     };
+    struct count_t {
+        int nb_inputs;
+        int nb_outputs;
+        int nb_hidden;
+        int nb_weights;
+        int nb_biases;
+        count_t(int NbInputs,  int NbHidden,int NbOutputs){
+            nb_inputs = NbInputs + 1; // bias is an input
+            nb_outputs = NbOutputs;
+            nb_hidden = NbHidden;
+            nb_weights =
+                    nb_inputs * nb_hidden // input to hidden (full)
+                    + nb_hidden * nb_outputs // hidden to output (full)
+                    + nb_outputs; // bias outputs
+            nb_biases = NbInputs + NbHidden + NbOutputs;
+        }
 
+    };
   }
   // a basic MLP with float weights
 //  typedef Mlp<Neuron<PfWSum<>, AfSigmoid<> >, Connection<> > mlp_t;

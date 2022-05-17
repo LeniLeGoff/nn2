@@ -92,7 +92,22 @@ namespace nn2 {
         nb_inputs * nb_outputs; // input to output (full)
       const int nb_biases = NbInputs + NbOutputs;
     };
+    struct count_t {
+        int nb_inputs;
+        int nb_outputs;
+        int nb_hidden;
+        int nb_weights;
+        int nb_biases;
+        count_t(int NbInputs,  int NbHidden,int NbOutputs){
+            nb_inputs = NbInputs + 1; // bias is an input
+            nb_outputs = NbOutputs;
+            nb_hidden = NbHidden;
+            nb_weights =
+                    nb_inputs * nb_outputs; // input to output (full)
+            nb_biases = NbInputs + NbHidden + NbOutputs;
+        }
 
+    };
   }
 
 
