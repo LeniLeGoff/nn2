@@ -112,48 +112,50 @@ namespace nn2 {
     std::vector<vertex_desc_t> _hidden_neurons;
     std::vector<vertex_desc_t> _context_neurons;
   };
-  namespace elman {
-    template<int NbInputs, int NbHidden, int NbOutputs>
-    struct Count {
-      const int nb_inputs = NbInputs + 1; // bias is an input
-      const int nb_outputs = NbOutputs;
-      const int nb_hidden = NbHidden;
-      const int nb_weights =
-        nb_inputs * nb_hidden // input to hidden (full)
-        + nb_hidden * nb_outputs // hidden to output (full)
-        + nb_hidden // hidden to context (1-1)
-        + nb_hidden // context to itself (1-1)
-        + nb_hidden * nb_hidden // context to hidden (full)
-        + nb_hidden // bias context
-        + nb_outputs; // bias outputs
-      const int nb_biases = NbInputs + NbHidden + NbOutputs;
-    };
+
+  //Wrong counting
+  //  namespace elman {
+//    template<int NbInputs, int NbHidden, int NbOutputs>
+//    struct Count {
+//      const int nb_inputs = NbInputs + 1; // bias is an input
+//      const int nb_outputs = NbOutputs;
+//      const int nb_hidden = NbHidden;
+//      const int nb_weights =
+//        nb_inputs * nb_hidden // input to hidden (full)
+//        + nb_hidden * nb_outputs // hidden to output (full)
+//        + nb_hidden // hidden to context (1-1)
+//        + nb_hidden // context to itself (1-1)
+//        + nb_hidden * nb_hidden // context to hidden (full)
+//        + nb_hidden // bias context
+//        + nb_outputs; // bias outputs
+//      const int nb_biases = NbInputs + NbHidden + NbOutputs;
+//    };
 
 
-    struct count_t {
-        int nb_inputs;
-        int nb_outputs;
-        int nb_hidden;
-        int nb_weights;
-        int nb_biases;
-        count_t(int NbInputs,  int NbHidden,int NbOutputs){
-            nb_inputs = NbInputs + 1; // bias is an input
-            nb_outputs = NbOutputs;
-            nb_hidden = NbHidden;
-            nb_weights =
-              nb_inputs * nb_hidden // input to hidden (full)
-              + nb_hidden * nb_outputs // hidden to output (full)
-              + nb_hidden // hidden to context (1-1)
-              + nb_hidden // context to itself (1-1)
-              + nb_hidden * nb_hidden // context to hidden (full)
-              + nb_hidden // bias context
-              + nb_outputs; // bias outputs
-            nb_biases = NbInputs + NbHidden + NbOutputs;
-        }
+//    struct count_t {
+//        int nb_inputs;
+//        int nb_outputs;
+//        int nb_hidden;
+//        int nb_weights;
+//        int nb_biases;
+//        count_t(int NbInputs,  int NbHidden,int NbOutputs){
+//            nb_inputs = NbInputs + 1; // bias is an input
+//            nb_outputs = NbOutputs;
+//            nb_hidden = NbHidden;
+//            nb_weights =
+//              nb_inputs * nb_hidden // input to hidden (full)
+//              + nb_hidden * nb_outputs // hidden to output (full)
+//              + nb_hidden // hidden to context (1-1)
+//              + nb_hidden // context to itself (1-1)
+//              + nb_hidden * nb_hidden // context to hidden (full)
+//              + nb_hidden // bias context
+//              + nb_outputs; // bias outputs
+//            nb_biases = NbInputs + NbHidden + NbOutputs;
+//        }
 
-    };
+//    };
 
-  }
+//  }
 }
 
 #endif
