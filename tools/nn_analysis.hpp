@@ -58,4 +58,32 @@ void analyse(int nbr_inputs,int nbr_outputs,int nbr_hidden, const std::vector<do
     }
 }
 
+template<typename NN>
+void analyse_cpg(int nbr_inputs,int nbr_outputs,int nbr_hidden, const std::vector<int> joint_subs, const std::vector<double> &weights, const std::vector<double> &biases, float step){
+    NN nn(nbr_inputs,nbr_hidden,nbr_outputs,joint_subs);
+    nn.set_all_weights(weights);
+    nn.set_all_biases(biases);
+    nn.set_all_afparams(std::vector<std::vector<double>>(biases.size(),{1,0}));
+    nn.init();
+
+    int nbr_steps = static_cast<int>(1/step);
+    std::vector<double> inputs(nbr_inputs);
+    std::cout << nbr_inputs << ";" << nbr_outputs << std::endl;
+    for(int i = -1; i < nbr_inputs; i++){
+        for(int j = 0; j < nbr_inputs; j++){
+            if(j != i)
+                inputs[j] = 0;
+        }
+        for(int t = -nbr_steps; t <=nbr_steps; t++){
+            if(i >= 0)
+                inputs[i] = step*static_cast<float>(t);
+            nn.step(inputs,step*static_cast<float>(t));
+            std::vector<double> outputs = nn.outf();
+            std::cout << io_to_string(inputs,outputs) << std::endl;
+        }
+    }
+}
+
+
+
 #endif //NN_ANALYSIS_HPP

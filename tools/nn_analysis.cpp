@@ -84,10 +84,10 @@ int main(int argc, char** argv){
         analyse<rnn_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
     else if(nn_type == ELMAN)
         analyse<elman_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
-//    else if(nn_type == ELMAN_CPG)
-//        analyse<elman_cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
-//    else if(nn_type == CPG)
-//        analyse<cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
+    else if(nn_type == ELMAN_CPG)
+        analyse_cpg<elman_cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
+    else if(nn_type == CPG)
+        analyse_cpg<cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
     else if(nn_type == FCP)
         analyse<fcp_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
 
