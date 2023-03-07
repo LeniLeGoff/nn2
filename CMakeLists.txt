@@ -43,6 +43,14 @@ if(TEST_CPPN)
 
 endif()
 
+add_executable(load_cppn tools/load_cppn.cpp)
+target_link_libraries(load_cppn NN2 ${OpenCV_LIBRARIES})
+target_include_directories(load_cppn PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(nn_analysis tools/nn_analysis.cpp)
+target_link_libraries(nn_analysis NN2 ${OpenCV_LIBRARIES})
+target_include_directories(nn_analysis PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 # INSTALL SECTION
 set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/NN2)
