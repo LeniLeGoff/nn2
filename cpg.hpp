@@ -81,11 +81,11 @@ namespace nn2 {
     * 3->0  4->1  5->2 Example: {-1,-1,-1,0,1,2}
     *
     *
-    *               |--------|
+    *          3  0 |--------| 1  4
+    *          --*--|        |__*--
+    *               |        |
     *               |        |__*--
-    *               |        |
-    *               |        |
-    *               |--------|
+    *               |--------|2   5
     */
     CPG(size_t nb_inputs,
         size_t nb_hidden,
@@ -95,6 +95,7 @@ namespace nn2 {
 
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
+      this->set_fixed_outputs();
 
       // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
@@ -136,6 +137,11 @@ namespace nn2 {
       std::vector<io_t> inf = in;
       inf.push_back(1.0f);
       nn_t::_step_integrate(inf,delta);
+    }
+    void set_fixed_outputs(){
+        BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
+          this->_g[v].set_fixed();
+        }
     }
    protected:
     std::vector<vertex_desc_t> _cpgs; // CPG
