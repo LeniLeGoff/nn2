@@ -119,6 +119,20 @@ namespace nn2 {
    protected:
   };
 
+  template <typename P = double>
+  struct AfFilterSigmoidSigned : public Af<P> {
+    typedef P params_t;
+    AfFilterSigmoidSigned() {
+      //assert(this->_params.size() == 2);
+    }
+    float operator()(std::vector<double> p) const {
+      return (1.0 / (exp(-p[0] + p[1]) + 1) - 0.5f)*2.f;
+    }
+   protected:
+  };
+
+
+
   // copy input to output
   // store an arbitrary parameter
   template<typename P = params::Dummy>
