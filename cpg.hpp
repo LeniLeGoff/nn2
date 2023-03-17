@@ -50,14 +50,12 @@ typedef nn2::Neuron<pf_t,af_t> neuron_t;
 typedef nn2::Connection<> connection_t;
 
 namespace nn2 {
-  // a "modified" ElmanCPG network with self-recurrent context units
-  // E.g. : Training ElmanCPG and Jordan networks for system
-  // identification using genetic algorithms
-  // Artificial Intelligence in Engineering
-  // Volume 13, Issue 2, April 1999, Pages 107-117
-  // first input is a BIAS input (it should be set to 1)
+
   template<typename N, typename C>
-  class CPG : public NN<N, C> {
+/**
+ * @brief An implementation of CPG network for the ARE framework
+ */
+class CPG : public NN<N, C> {
    public:
     typedef NN<N, C> nn_t;
     typedef typename nn_t::io_t io_t;
@@ -95,7 +93,6 @@ namespace nn2 {
 
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
-      this->set_fixed_outputs();
 
       // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
@@ -138,11 +135,7 @@ namespace nn2 {
       inf.push_back(1.0f);
       nn_t::_step_integrate(inf,delta);
     }
-    void set_fixed_outputs(){
-        BOOST_FOREACH(vertex_desc_t v, this->_outputs) {
-          this->_g[v].set_fixed();
-        }
-    }
+
    protected:
     std::vector<vertex_desc_t> _cpgs; // CPG
 
