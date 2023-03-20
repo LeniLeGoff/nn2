@@ -126,7 +126,7 @@ namespace nn2 {
       //assert(this->_params.size() == 2);
     }
     float operator()(std::vector<double> p) const {
-      return (1.0 / (exp(-p[0] + p[1]) + 1) - 0.5f)*2.f;
+      return (1.0 / (exp(-(1+p[1])*(p[0])) + 1) - 0.5f)*2.f;
     }
    protected:
   };

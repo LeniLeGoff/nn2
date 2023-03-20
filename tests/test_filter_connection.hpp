@@ -9,9 +9,8 @@ public:
     FilterPerceptron(){
         this->set_nb_inputs(2);
         this->set_nb_outputs(1);
-
+        this->_g[this->_outputs[0]].set_pfparams(1);
         this->full_connect(this->_inputs,this->_outputs,nn2::trait<typename N::weight_t>::zero());
-        this->_outputs[0].no_bias();
     }
 };
 
