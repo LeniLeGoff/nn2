@@ -9,6 +9,7 @@
 
 namespace tools{
 using neuron_t = nn2::Neuron<nn2::PfWSum<double>,nn2::AfSigmoidSigned<std::vector<double>>>;
+using cpg_neuron_t = nn2::Neuron<nn2::PfWSum<double>,nn2::Af_cpg<>>;
 using connection_t = nn2::Connection<double>;
 }
 
@@ -17,7 +18,7 @@ using elman_t = nn2::Elman<tools::neuron_t,tools::connection_t>;
 using rnn_t = nn2::Rnn<tools::neuron_t,tools::connection_t>;
 using fcp_t = nn2::Fcp<tools::neuron_t,tools::connection_t>;
 using elman_cpg_t = nn2::ElmanCPG<tools::neuron_t,tools::connection_t>;
-using cpg_t = nn2::CPG<tools::neuron_t,tools::connection_t>;
+using cpg_t = nn2::CPG<tools::cpg_neuron_t,tools::connection_t>;
 
 typedef enum nn_type_t{
     FFNN = 0,
@@ -63,7 +64,7 @@ void analyse_cpg(int nbr_inputs,int nbr_outputs,int nbr_hidden, const std::vecto
     NN nn(nbr_inputs,nbr_hidden,nbr_outputs,joint_subs);
     nn.set_all_weights(weights);
     nn.set_all_biases(biases);
-    nn.set_all_afparams(std::vector<std::vector<double>>(biases.size(),{1,0}));
+   // nn.set_all_afparams(std::vector<std::vector<double>>(biases.size(),{1,0}));
     nn.init();
 
     int nbr_steps = static_cast<int>(1/step);

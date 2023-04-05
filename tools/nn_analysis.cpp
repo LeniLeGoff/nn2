@@ -42,11 +42,11 @@ bool read_parameters(const std::string &filename,int& nn_type,int &nbr_inputs,in
 
     weights.clear();
     for(int i = 3; i < nbr_weights+3; i++)
-        weights.push_back(std::stod(split_str[i]));
+        weights.push_back(std::tanh(std::stod(split_str[i])));
 
     biases.clear();
     for(int i = nbr_weights + 3; i < nbr_weights + nbr_bias + 3; i++)
-        biases.push_back(std::stod(split_str[i]));
+        biases.push_back(std::tanh(std::stod(split_str[i])));
     return true;
 }
 
@@ -107,7 +107,7 @@ int main(int argc, char** argv){
         std::vector<int> joint_subs;
         for(const auto &val: joint_subs_str)
             joint_subs.push_back(std::stoi(val));
-        analyse_cpg<cpg_t>(nbr_inputs-1,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
+        analyse_cpg<cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
     }
     else if(nn_type == FCP)
         analyse<fcp_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);

@@ -226,29 +226,42 @@ namespace nn2 {
 
     void set_all_weights(const std::vector<weight_t>& ws) {
 #ifndef NDEBUG
-      if (num_edges(_g) != ws.size())
+      if (num_edges(_g) - _balanced_edges.size() != ws.size())
         std::cout << "param errors: "
-                  << num_edges(_g)
+                  << num_edges(_g)  - _balanced_edges.size()
                   << " whereas "
                   << ws.size()
                   << " provided" <<std::endl;
 #endif
-      assert(num_edges(_g) == ws.size());
+      assert(num_edges(_g) - _balanced_edges.size() == ws.size());
       size_t k = 0;
       edge_desc_t f;
+      std::vector<edge_desc_t> assigned_edges;
+      bool already_assigned;
       BGL_FORALL_EDGES_T(e, _g, graph_t){
+          if(k >= num_edges(_g) - _balanced_edges.size())
+              break;
+          already_assigned = false;
+          for(edge_desc_t& g : assigned_edges){
+              if(e == g){
+                  already_assigned = true;
+                  break;
+              }
+          }
+          if(already_assigned) continue;
           _g[e].set_weight(ws[k]);
           if(_g[e].is_balanced()){
               for(const auto& pair: _balanced_edges){
-                  if(pair.first.m_source == e.m_source){
+                  if(pair.first.m_source == e.m_source && pair.first.m_target == e.m_target){
                       f = pair.second;
                       break;
                   }
-                  if(pair.second.m_source == e.m_source){
+                  if(pair.second.m_source == e.m_source && pair.second.m_target == e.m_target){
                     f = pair.first;
                     break;
                   }
               }
+              assigned_edges.push_back(f);
               _g[f].set_weight(-ws[k]);
           }
           k++;
@@ -387,7 +400,7 @@ namespace nn2 {
       return _outputs.size();
     }
     unsigned get_nb_connections() const {
-      return num_edges(_g);
+      return num_edges(_g) - _balanced_edges.size();
     }
     unsigned get_nb_neurons() const {
       return num_vertices(_g);

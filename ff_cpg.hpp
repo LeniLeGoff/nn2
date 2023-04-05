@@ -346,17 +346,17 @@ typedef nn2::Connection<> connection_t;
 
       // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
-        auto neuron_a1 = this->add_neuron("A1"); //output of oscillator
-        auto neuron_b1 = this->add_neuron("B1");
+        auto neuron_a = this->add_neuron("A1"); //output of oscillator
+        auto neuron_b = this->add_neuron("B1");
         //set potential function to a sum and activation function to direct
-        neuron_a1.set_pfparams({0});
-        neuron_a1.set_afparams({1});
-        neuron_b1.set_pfparams({0});
-        neuron_a1.set_afparams({1});
-        this->create_oscillator_connection(neuron_a1, neuron_b1,
+        this->_g[neuron_a].set_pfparams(0);
+        this->_g[neuron_a].set_afparams(1);
+        this->_g[neuron_b].set_pfparams(0);
+        this->_g[neuron_b].set_afparams(1);
+        this->create_oscillator_connection(neuron_a, neuron_b,
                                            trait<typename N::weight_t>::zero());
-        _cpgs.push_back(neuron_a1);
-        this->add_connection(neuron_a1,this->_outputs[i],
+        _cpgs.push_back({neuron_a,neuron_b});
+        this->add_connection(neuron_a,this->_outputs[i],
                 trait<typename N::weight_t>::zero()); // connection to the outputs
       }
 

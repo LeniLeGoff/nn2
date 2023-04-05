@@ -125,6 +125,28 @@ namespace nn2 {
      Eigen::VectorXd _w_cache;
   };
 
+  template<typename W = double>
+  struct PfDualInputFiltering : public Pf<W> {
+    typedef params::Dummy params_t;
+    typedef W weight_t;
+    void init() {
+      _w_cache.resize(this->_weights.size());
+      for (size_t i = 0; i < this->_weights.size(); ++i)
+          _w_cache[i] = trait<weight_t>::single_value(this->_weights[i]);
+    }
+    float operator() (const trait<double>::vector_t & inputs) const {
+      assert(inputs.size() == _w_cache.size());
+      //std::cout<<"in:"<<inputs.transpose()<<" w:"<<_w_cache.transpose()<<"=>"<<
+      //_w_cache.dot(inputs)<<std::endl;
+      if (inputs.size() == 0)
+        return 0.0f;
+      return {_w_cache[0]*inputs[0],_w_cache[1]*inputs[1]};
+
+    }
+   protected:
+     Eigen::VectorXd _w_cache;
+  };
+
 
 
 

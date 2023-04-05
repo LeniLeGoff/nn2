@@ -83,7 +83,10 @@ namespace nn2 {
     io_t activate_phantom(io_t current_state, const typename trait<io_t>::vector_t &inputs, double delta) const {
         if (_fixed) return current_state;
 
-        io_t output = _af(_pf(inputs) + _bias);
+        io_t output;
+        if(_with_bias)
+            output = _af(_pf(inputs) + _bias);
+        else output = _af(_pf(inputs));
         if (_differential)
             return current_state + (delta * output);
         else
@@ -214,6 +217,8 @@ namespace nn2 {
         _differential = differential;
     }
 
+    void no_bias(){_with_bias=false;}
+
     // for graph algorithms
     std::string _id;
     std::string _label;
@@ -241,6 +246,9 @@ namespace nn2 {
     int _out;
     // true if the neuron should activation should be differential
     bool _differential = false;
+    bool _with_bias = true;
   };
+
+
 }
 #endif
