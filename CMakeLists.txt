@@ -22,7 +22,7 @@ target_include_directories(NN2 SYSTEM INTERFACE ${EIGEN3_INCLUDE_DIRS} ${Boost_I
 target_compile_definitions(NN2 INTERFACE -DEIGEN3_ENABLED ${EIGEN3_DEFINITIONS})
 
 # TESTS SECTION
-if(TEST_CPPN)
+if(BUILD_TESTS)
     find_package(OpenCV REQUIRED)
 
     add_executable(test_cppn tests/test_cppn.cpp)
@@ -40,6 +40,7 @@ if(TEST_CPPN)
     add_executable(test_cpg2 tests/test_cpg2.cpp)
     target_link_libraries(test_cpg2 NN2 ${OpenCV_LIBRARIES})
     target_include_directories(test_cpg2 PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+
 
     add_executable(test_filter_connection tests/test_filter_connection.cpp)
     target_link_libraries(test_filter_connection NN2 ${OpenCV_LIBRARIES})

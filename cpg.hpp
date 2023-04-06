@@ -112,7 +112,7 @@ class CPG : public NN<N, C> {
       this->set_nb_inputs(nb_inputs + 1);
       this->set_nb_outputs(nb_outputs);
       BOOST_FOREACH(vertex_desc_t v, this->_outputs){
-        this->_g[v].no_bias();
+        //this->_g[v].no_bias();
           this->_g[v].set_afparams(0);
       }
       // Create oscillators
