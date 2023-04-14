@@ -108,8 +108,17 @@ namespace nn2 {
     // constructor
     NN() : _neuron_counter(0), _init_done(false) {
     }
-    NN(const NN& o) {
-      *this = o;
+    NN(const NN& o){
+        _g = o._g;
+        _neuron_counter = o._neuron_counter;
+        _inputs.clear();
+        _outputs.clear();
+        _inputs.resize(o.get_nb_inputs());
+        _outputs.resize(o.get_nb_outputs());
+        _outf.resize(o.get_nb_outputs());
+        _init_io();
+        _init_done = o._init_done;
+        _init_balanced();
     }
     NN& operator=(const NN& o) {
       if (&o == this)

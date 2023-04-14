@@ -66,6 +66,16 @@ namespace nn2 {
       _out(-1) {
     }
 
+    Neuron(const Neuron& n):
+        _af(n._af), _pf(n._pf),
+        _color(n._color), _id(n._id),
+        _index(n._index), _label(n._label),
+        _bias(n._bias),
+        _current_output(n._current_output),
+        _next_output(n._next_output)
+
+    {}
+
     bool get_fixed() const {
       return _fixed;
     }

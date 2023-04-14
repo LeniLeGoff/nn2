@@ -84,7 +84,9 @@ class CPG : public NN<N, C> {
     typedef N neuron_t;
     typedef C conn_t;
 
-    CPG(){}
+    CPG():nn_t(){}
+    CPG(const CPG<N,C> &cpg) :
+        nn_t(cpg), _cpg_inputs(cpg._cpg_inputs), _cpg_outputs(cpg._cpg_outputs){}
     /**
     * @brief CPG
     * @param nb_inputs
@@ -120,15 +122,18 @@ class CPG : public NN<N, C> {
         std::stringstream name1,name2;
         name1 << "A" << i;
         name2 << "B" << i;
-        auto neuron_a = this->add_neuron(name1.str()); //output of oscillator
-        auto neuron_b = this->add_neuron(name2.str());
+        _cpg_outputs.push_back(this->add_neuron(name1.str())); 
+        _cpg_inputs.push_back(this->add_neuron(name2.str()));
+        vertex_desc_t &neuron_a = _cpg_outputs.back(); //output of oscillator
+        vertex_desc_t &neuron_b = _cpg_inputs.back();
+
         this->_g[neuron_a].set_afparams(1);
         this->_g[neuron_b].set_afparams(1);
         this->_g[neuron_a].no_bias();
         this->_g[neuron_b].no_bias();
         this->create_oscillator_connection(neuron_a, neuron_b,
                                            trait<typename N::weight_t>::zero());
-        _cpgs.push_back({neuron_a,neuron_b});
+        
         this->add_connection(neuron_a,this->_outputs[i],
                 trait<typename N::weight_t>::zero()); // connection to the outputs
       }
@@ -140,16 +145,16 @@ class CPG : public NN<N, C> {
                   if(i==j)
                       continue;
                   if(joint_substrate.at(j) == joint_substrate.at(i)){
-                      auto output = _cpgs.at(i)[0];
-                      auto input = _cpgs.at(j)[0];
+                      vertex_desc_t &output = _cpg_outputs.at(i);
+                      vertex_desc_t &input = _cpg_inputs.at(j);
                       this->add_connection(output, input, 1.0,true);
                       joint_substrate[j]--;
                   }
               }
           }
           else {
-            auto output = _cpgs.at(i)[0];
-            auto input = _cpgs.at(joint_substrate[i])[0];
+            vertex_desc_t &output = _cpg_outputs.at(i);
+            vertex_desc_t &input = _cpg_inputs.at(joint_substrate[i]);
             this->add_connection(output, input, 1.0,true);
           }
         }
@@ -161,22 +166,25 @@ class CPG : public NN<N, C> {
       assert(in.size() == this->get_nb_inputs());
       std::vector<io_t> inf = in;
       inf.push_back(1.0f);
-      nn_t::_step_integrate(inf,delta);
+      this->_step_integrate(inf,delta);
     }
 
     void init() override{
         this->_init();
-        BOOST_FOREACH(std::vector<vertex_desc_t> v, _cpgs) {
-            this->_g[v[0]].set_current_output(0.707);
-            this->_g[v[1]].set_current_output(-0.707);
-            this->_g[v[0]].set_next_output(0.707);
-            this->_g[v[1]].set_next_output(-0.707);
+        //using vertex_pair = std::pair<vertex_desc_t,vertex_desc_t>;
+        BOOST_FOREACH(vertex_desc_t& v, _cpg_outputs) {
+            this->_g[v].set_current_output(0.707);
+            this->_g[v].set_next_output(0.707);
+        }
+        BOOST_FOREACH(vertex_desc_t& v, _cpg_inputs) {
+            this->_g[v].set_current_output(-0.707);
+            this->_g[v].set_next_output(-0.707);
         }
     }
 
    protected:
-    std::vector< std::vector<vertex_desc_t>> _cpgs; // CPG
-
+    std::vector<vertex_desc_t> _cpg_inputs; // CPG
+    std::vector<vertex_desc_t> _cpg_outputs;
   };
   namespace cpg {
     template<int NbInputs, int NbHidden, int Wheels, int PrimaryJoints, int SecondaryJoints>
