@@ -6,6 +6,7 @@
 #include "fcp.hpp"
 #include "elman_cpg.hpp"
 #include "cpg.hpp"
+#include "ff_cpg.hpp"
 
 namespace tools{
 using neuron_t = nn2::Neuron<nn2::PfWSum<double>,nn2::AfSigmoidSigned<std::vector<double>>>;
@@ -19,6 +20,7 @@ using rnn_t = nn2::Rnn<tools::neuron_t,tools::connection_t>;
 using fcp_t = nn2::Fcp<tools::neuron_t,tools::connection_t>;
 using elman_cpg_t = nn2::ElmanCPG<tools::neuron_t,tools::connection_t>;
 using cpg_t = nn2::CPG<tools::cpg_neuron_t,tools::connection_t>;
+using ff_cpg_t = nn2::Ffcpg<nn2::ffcpg::neuron_t,nn2::ffcpg::connection_t>;
 
 typedef enum nn_type_t{
     FFNN = 0,
@@ -26,7 +28,8 @@ typedef enum nn_type_t{
     ELMAN = 2,
     ELMAN_CPG = 3,
     CPG = 4,
-    FCP = 5
+    FCP = 5,
+    FF_CPG = 6
 }nn_type_t;
 
 

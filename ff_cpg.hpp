@@ -94,12 +94,12 @@ template<>
 class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
  public:
   typedef typename Pf_ff_cpg<>::weight_t weight_t;
-  typedef Pf_ff_cpg<> pf_t;
-  typedef AfFilterSigmoidSigned<> af_t;
   typedef double io_t;
+  typedef Pf_ff_cpg<> pf_t;
+  typedef Af_ff_cpg<> af_t;
 
-  static double zero() {
-    return trait<double>::zero();
+  static io_t zero() {
+    return trait<io_t>::zero();
   }
 
   Neuron() :
@@ -110,6 +110,16 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
     _out(-1) {
   }
 
+  Neuron(const Neuron& n):
+      _af(n._af), _pf(n._pf),
+      _color(n._color), _id(n._id),
+      _index(n._index), _label(n._label),
+      _bias(n._bias),
+      _current_output(n._current_output),
+      _next_output(n._next_output)
+
+  {}
+
   bool get_fixed() const {
     return _fixed;
   }
@@ -117,17 +127,20 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
     _fixed = b;
   }
 
-  double activate(double delta) {
+  io_t activate(double delta) {
     if (!_fixed) {
       _next_output = activate_phantom(_current_output, _inputs, delta);
     }
     return _next_output;
   }
 
-  double activate_phantom(double current_state, const typename trait<double>::vector_t &inputs, double delta) const {
+  io_t activate_phantom(io_t current_state, const typename trait<io_t>::vector_t &inputs, double delta) const {
       if (_fixed) return current_state;
 
-      double output = _af(_pf(inputs));
+      io_t output;
+      if(_with_bias)
+          output = _af({_pf(inputs)[0] + _bias,_pf(inputs)[1]});
+      else output = _af(_pf(inputs));
       if (_differential)
           return current_state + (delta * output);
       else
@@ -138,16 +151,16 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
     _pf.init();
     _af.init();
     if (get_in_degree() != 0)
-      _inputs = trait<double>::zero(get_in_degree());
+      _inputs = trait<io_t>::zero(get_in_degree());
     _current_output = zero();
     _next_output = zero();
   }
 
-  void set_input(unsigned i, const double& in) {
+  void set_input(unsigned i, const io_t& in) {
     assert(i < _inputs.size());
     _inputs[i] = in;
   }
-  const typename trait<double>::vector_t &get_inputs() const {return _inputs;}
+  const typename trait<io_t>::vector_t &get_inputs() const {return _inputs;}
   void set_weight(unsigned i, const weight_t& w) {
     _pf.set_weight(i, w);
   }
@@ -171,7 +184,7 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
     _pf.set_params(p);
   }
 
-  void set_bias(const double& b){
+  void set_bias(const io_t& b){
       _bias = b;
   }
 
@@ -183,27 +196,27 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
     _inputs.resize(k);
     if (k == 0)
       return;
-    _inputs = trait<double>::zero(k);
+    _inputs = trait<io_t>::zero(k);
   }
   unsigned get_in_degree() const {
     return _pf.get_weights().size();
   }
 
   // for input neurons
-  void set_current_output(const double& v) {
+  void set_current_output(const io_t& v) {
     _current_output = v;
   }
-  void set_next_output(const double& v) {
+  void set_next_output(const io_t& v) {
     _next_output = v;
   }
 
   // standard output
-  const double& get_current_output() const {
+  const io_t& get_current_output() const {
     return _current_output;
   }
 
   // next output
-  const double& get_next_output() const {
+  const io_t& get_next_output() const {
     return _next_output;
   }
 
@@ -258,6 +271,8 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
       _differential = differential;
   }
 
+  void no_bias(){_with_bias=false;}
+
   // for graph algorithms
   std::string _id;
   std::string _label;
@@ -271,12 +286,12 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
   // potential functor
   pf_t _pf;
   // bias
-  double _bias;
+  io_t _bias;
   // outputs
-  double _current_output;
-  double _next_output;
+  io_t _current_output;
+  io_t _next_output;
   // cache
-  typename trait<double>::vector_t _inputs;
+  typename trait<io_t>::vector_t _inputs;
   // fixed = current_output is constant
   bool _fixed;
   // -1 if not an input of the nn, id of input otherwise
@@ -285,6 +300,7 @@ class Neuron<Pf_ff_cpg<>,Af_ff_cpg<>,double> {
   int _out;
   // true if the neuron should activation should be differential
   bool _differential = false;
+  bool _with_bias = true;
 };
 
 namespace ffcpg {
@@ -346,18 +362,24 @@ typedef nn2::Connection<> connection_t;
 
       // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
-        auto neuron_a = this->add_neuron("A1"); //output of oscillator
-        auto neuron_b = this->add_neuron("B1");
-        //set potential function to a sum and activation function to direct
-        this->_g[neuron_a].set_pfparams(0);
-        this->_g[neuron_a].set_afparams(1);
-        this->_g[neuron_b].set_pfparams(0);
-        this->_g[neuron_b].set_afparams(1);
-        this->create_oscillator_connection(neuron_a, neuron_b,
-                                           trait<typename N::weight_t>::zero());
-        _cpgs.push_back({neuron_a,neuron_b});
-        this->add_connection(neuron_a,this->_outputs[i],
-                trait<typename N::weight_t>::zero()); // connection to the outputs
+          std::stringstream name1,name2;
+          name1 << "A" << i;
+          name2 << "B" << i;
+          _cpg_outputs.push_back(this->add_neuron(name1.str()));
+          _cpg_inputs.push_back(this->add_neuron(name2.str()));
+          vertex_desc_t &neuron_a = _cpg_outputs.back(); //output of oscillator
+          vertex_desc_t &neuron_b = _cpg_inputs.back();
+          //set potential function to a sum and activation function to direct
+          this->_g[neuron_a].set_pfparams(0);
+          this->_g[neuron_a].set_afparams(1);
+          this->_g[neuron_a].no_bias();
+          this->_g[neuron_b].set_pfparams(0);
+          this->_g[neuron_b].set_afparams(1);
+          this->_g[neuron_b].no_bias();
+          this->create_oscillator_connection(neuron_a, neuron_b,
+                                             trait<typename N::weight_t>::zero());
+          this->add_connection(neuron_a,this->_outputs[i],
+                               trait<typename N::weight_t>::zero()); // connection to the outputs
       }
 
       this->connect(_hidden_neurons,this->_outputs,trait<typename N::weight_t>::zero());
@@ -369,19 +391,19 @@ typedef nn2::Connection<> connection_t;
                   if(i==j)
                       continue;
                   if(joint_substrate.at(j) == joint_substrate.at(i)){
-                      auto output = _cpgs.at(i);
-                      auto input = _cpgs.at(j);
+                      vertex_desc_t &output = _cpg_outputs.at(i);
+                      vertex_desc_t &input = _cpg_inputs.at(j);
                       this->add_connection(output, input, 1.0,true);
                       joint_substrate[j]--;
                   }
               }
           }
           else {
-            auto output = _cpgs.at(i);
-            auto input = _cpgs.at(joint_substrate[i]);
-            this->add_connection(output, input, 1.0,true);
+              vertex_desc_t &output = _cpg_outputs.at(i);
+              vertex_desc_t &input = _cpg_inputs.at(joint_substrate[i]);
+              this->add_connection(output, input, 1.0,true);
           }
-        }
+      }
 
       // set neuron as classic: sum and sigmoid
       BOOST_FOREACH(vertex_desc_t v, _hidden_neurons) {
@@ -406,7 +428,8 @@ typedef nn2::Connection<> connection_t;
       nn_t::_step_integrate(inf,delta);
     }
    protected:
-    std::vector<vertex_desc_t> _cpgs; // CPG
+    std::vector<vertex_desc_t> _cpg_inputs; // CPG
+    std::vector<vertex_desc_t> _cpg_outputs;
     std::vector<vertex_desc_t> _hidden_neurons;
 
   };
