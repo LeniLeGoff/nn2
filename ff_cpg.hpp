@@ -358,8 +358,6 @@ typedef nn2::Connection<> connection_t;
 
       this->full_connect(this->_inputs,_hidden_neurons, trait<typename N::weight_t>::zero());
 
-
-
       // Create oscillators
       for(int i = 0; i < joint_substrate.size(); i++){
           std::stringstream name1,name2;
@@ -419,7 +417,7 @@ typedef nn2::Connection<> connection_t;
 
     }
     unsigned get_nb_inputs() const {
-      return this->_inputs.size() - 1;
+      return this->_inputs.size()-1;
     }
     void step(const std::vector<io_t>& in,double delta = 0.0) {
       assert(in.size() == this->get_nb_inputs());
