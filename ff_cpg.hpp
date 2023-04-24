@@ -425,6 +425,18 @@ typedef nn2::Connection<> connection_t;
       inf.push_back(1.0f);
       nn_t::_step_integrate(inf,delta);
     }
+    void init() override{
+        this->_init();
+        //using vertex_pair = std::pair<vertex_desc_t,vertex_desc_t>;
+        BOOST_FOREACH(vertex_desc_t& v, _cpg_outputs) {
+            this->_g[v].set_current_output(0.707);
+            this->_g[v].set_next_output(0.707);
+        }
+        BOOST_FOREACH(vertex_desc_t& v, _cpg_inputs) {
+            this->_g[v].set_current_output(-0.707);
+            this->_g[v].set_next_output(-0.707);
+        }
+    }
    protected:
     std::vector<vertex_desc_t> _cpg_inputs; // CPG
     std::vector<vertex_desc_t> _cpg_outputs;
