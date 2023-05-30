@@ -83,6 +83,12 @@ void analyse_cpg(int nbr_inputs,int nbr_outputs,int nbr_hidden, const std::vecto
                 inputs[i] = step*static_cast<float>(t);
             nn.step(inputs,step*static_cast<float>(t));
             std::vector<double> outputs = nn.outf();
+            std::vector<double> hidden_out = nn.get_hidden_outf();
+            std::vector<double> cpg_out = nn.get_cpg_outf();
+
+            outputs.insert(outputs.end(),hidden_out.begin(),hidden_out.end());
+            outputs.insert(outputs.end(),cpg_out.begin(),cpg_out.end());
+
             std::cout << io_to_string(inputs,outputs) << std::endl;
         }
     }

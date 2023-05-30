@@ -20,7 +20,11 @@ def read_file(filename):
         values.append([n,float(line_split[i]),"i"+str(i)])
       for o in range(nbr_outputs):
         values.append([n,float(line_split[o+nbr_inputs]),"o"+str(o)])
-        
+      for o in range(nbr_outputs):
+        values.append([n,float(line_split[o+nbr_inputs+nbr_outputs]),"h"+str(o)])
+      for o in range(nbr_outputs):
+        values.append([n,float(line_split[o+nbr_inputs+nbr_outputs*2]),"cpg"+str(o)])
+ 
     return pd.DataFrame(values,columns=["index","value","name"])
 
 if __name__ == '__main__':

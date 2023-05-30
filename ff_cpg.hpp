@@ -65,9 +65,9 @@ struct Pf_ff_cpg : public Pf<W,P> {
             return {0.0f,0.0f};
 
         if(this->_params == 0)// weighted sum
-            return {_w_cache.dot(inputs),0};
+            return {_w_cache.dot(inputs),0.2};
         else// dual inputs
-            return {_w_cache[0]*inputs[0],_w_cache[1]*inputs[1]};
+            return {_w_cache[0]*inputs[0],inputs[1]};
     }
 protected:
     Eigen::VectorXd _w_cache;
@@ -81,7 +81,7 @@ struct Af_ff_cpg : public Af<P> {
     }
     float operator()(std::vector<double> p) const {
       if(this->_params == 0)
-        return (1.0 / (exp(-(1+p[1])*(p[0])) + 1) - 0.5f)*2.f;
+        return (1.0 / (exp(-5*(p[1])*(p[0])) + 1) - 0.5f)*2.f;
       else
         return p[0];
     }
@@ -425,6 +425,25 @@ typedef nn2::Connection<> connection_t;
       inf.push_back(1.0f);
       nn_t::_step_integrate(inf,delta);
     }
+
+    std::vector<double> get_hidden_outf(){
+        std::vector<double> outputs(_hidden_neurons.size());
+        unsigned i = 0;
+        for (typename std::vector<vertex_desc_t>::const_iterator it = _hidden_neurons.begin();
+             it != _hidden_neurons.end(); ++it, ++i)
+          outputs[i] = this->_g[*it].get_current_output();
+        return outputs;
+    }
+
+    std::vector<double> get_cpg_outf(){
+        std::vector<double> outputs(_hidden_neurons.size());
+        unsigned i = 0;
+        for (typename std::vector<vertex_desc_t>::const_iterator it = _cpg_outputs.begin();
+             it != _cpg_outputs.end(); ++it, ++i)
+          outputs[i] = this->_g[*it].get_current_output();
+        return outputs;
+    }
+
     void init() override{
         this->_init();
         //using vertex_pair = std::pair<vertex_desc_t,vertex_desc_t>;

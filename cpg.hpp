@@ -168,7 +168,12 @@ class CPG : public NN<N, C> {
       inf.push_back(1.0f);
       this->_step_integrate(inf,delta);
     }
-
+    std::vector<double> get_hidden_outf(){
+        return std::vector<double>();
+    }
+    std::vector<double> get_cpg_outf(){
+        return std::vector<double>();
+    }
     void init() override{
         this->_init();
         //using vertex_pair = std::pair<vertex_desc_t,vertex_desc_t>;

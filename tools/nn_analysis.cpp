@@ -84,18 +84,18 @@ int main(int argc, char** argv){
         analyse<rnn_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
     else if(nn_type == ELMAN)
         analyse<elman_t>(nbr_inputs,nbr_outputs,nbr_hidden,weights,biases,step);
-    else if(nn_type == ELMAN_CPG){
-        if(argc < 4){
-            std::cerr << "The neural network include CPGs, please provide the joint substrates as last argument\n Example: -1;0 for two oscillators connected in serie" << std::endl;
-            return 1;
-        }
-        std::vector<std::string> joint_subs_str;
-        split(std::string(argv[3]),";",joint_subs_str);
-        std::vector<int> joint_subs;
-        for(const auto &val: joint_subs_str)
-            joint_subs.push_back(std::stoi(val));
-        analyse_cpg<elman_cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
-    }
+//    else if(nn_type == ELMAN_CPG){
+//        if(argc < 4){
+//            std::cerr << "The neural network include CPGs, please provide the joint substrates as last argument\n Example: -1;0 for two oscillators connected in serie" << std::endl;
+//            return 1;
+//        }
+//        std::vector<std::string> joint_subs_str;
+//        split(std::string(argv[3]),";",joint_subs_str);
+//        std::vector<int> joint_subs;
+//        for(const auto &val: joint_subs_str)
+//            joint_subs.push_back(std::stoi(val));
+//        analyse_cpg<elman_cpg_t>(nbr_inputs,nbr_outputs,nbr_hidden,joint_subs,weights,biases,step);
+//    }
     else if(nn_type == CPG){
         if(argc < 4){
             std::cerr << "The neural network include CPGs, please provide the joint substrates as last argument\n Example: -1;0 for two oscillators connected in serie" << std::endl;
