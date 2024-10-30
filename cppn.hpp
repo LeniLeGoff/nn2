@@ -64,7 +64,7 @@ struct AfParams{
     nn2::EvoFloat<1,Params> p1;
 
     void random(){
-        type = std::uniform_int_distribution<>(0,3)(rgen_t::gen);
+        type = std::uniform_int_distribution<>(0,2)(rgen_t::gen);
         p0.random();
         p1.random();
     }
@@ -81,7 +81,7 @@ struct AfParams{
     }
 
 };
-enum{sine = 0, sigmoid, gaussian, linear, cube, polynome};
+enum{sine = 0, sigmoid, gaussian, cube, polynome, linear};
 
 
 }//cppn
@@ -94,17 +94,17 @@ struct AfCppn : public Af<Params> {
     double operator() (double p) const {
         switch (this->_params.type) {
         case cppn::sine:
-            return sin(this->_params.p0.data(0)*p + this->_params.p1.data(0));
+            return sin(this->_params.p0.data(0)*p*10 + this->_params.p1.data(0));
         case cppn::sigmoid:
-            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p + this->_params.p1.data(0)))) - 0.5) * 2;
+            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p*10 + this->_params.p1.data(0)))) - 0.5) * 2;
         case cppn::gaussian:
-            return exp(-this->_params.p0.data(0)*powf(p, 2)+this->_params.p1.data(0));
-        case cppn::linear:
-            return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0), 3.0) / 3.0;
-//        case cppn::cube:
-//            return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
-//        case cppn::polynome:
-//            return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
+            return exp(-fabs(this->_params.p0.data(0)*10)*powf(p+this->_params.p1.data(0), 2));
+       // case cppn::linear:
+       //     return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0), 3.0) / 3.0;
+        // case cppn::cube:
+        //     return (p+this->_params.p0.data(0))*(p+this->_params.p0.data(0))*(p+this->_params.p0.data(0)) + this->_params.p1.data(0);
+        // case cppn::polynome:
+        //     return this->_params.p0.data(0)*p*p*p*p + this->_params.p1.data(0)*p*p*p;
         default:
             assert(0);
         }
@@ -319,7 +319,7 @@ public:
         if(choice <= prob_v[0])
             BGL_FORALL_EDGES_T(e, this->_g, graph_t)
                     this->_g[e].get_weight().mutate();
-        else if(prob_v[0] < choice <= sum(prob_v,2))
+        else if(prob_v[0] < choice && choice <= sum(prob_v,2))
             _change_connections();
         else if(sum(prob_v,2) < choice && choice <= sum(prob_v,3))
             _change_neurons();

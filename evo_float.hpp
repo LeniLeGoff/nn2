@@ -114,7 +114,7 @@ public:
         _check_invariant();
     }
     void random() {
-        BOOST_FOREACH(double &v, this->_data) v = std::uniform_real_distribution<>(0,1)(rgen_t::gen);
+        BOOST_FOREACH(double &v, this->_data) v = std::uniform_real_distribution<>(params_t::evo_float::min,params_t::evo_float::max)(rgen_t::gen);
         _check_invariant();
     }
     //@}
