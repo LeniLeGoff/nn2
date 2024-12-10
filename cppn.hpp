@@ -37,6 +37,7 @@ struct default_params{
         static constexpr size_t _max_nb_neurons = 5;
         static constexpr size_t _min_nb_conns = 10;
         static constexpr size_t _max_nb_conns = 100;
+        static constexpr double _expressiveness = 10.0;
     };
     struct evo_float{
         static constexpr double mutation_rate = 0.1f;
@@ -62,6 +63,7 @@ struct AfParams{
     int type = -1;
     nn2::EvoFloat<1,Params> p0;
     nn2::EvoFloat<1,Params> p1;
+    double expressiveness = Params::cppn::_expressiveness;
 
     void random(){
         type = std::uniform_int_distribution<>(0,2)(rgen_t::gen);
@@ -92,13 +94,14 @@ struct AfCppn : public Af<Params> {
     typedef AfCppn<Params> this_t;
     typedef Params params_t;
     double operator() (double p) const {
+        double e = this->_params.expressiveness;
         switch (this->_params.type) {
         case cppn::sine:
-            return sin(this->_params.p0.data(0)*p*10 + this->_params.p1.data(0));
+            return sin(this->_params.p0.data(0)*p*e + this->_params.p1.data(0));
         case cppn::sigmoid:
-            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p*10 + this->_params.p1.data(0)))) - 0.5) * 2;
+            return ((1.0 / (1 + exp(-this->_params.p0.data(0)*p*e + this->_params.p1.data(0)))) - 0.5) * 2;
         case cppn::gaussian:
-            return exp(-fabs(this->_params.p0.data(0)*10)*powf(p+this->_params.p1.data(0), 2));
+            return exp(-fabs(this->_params.p0.data(0)*e)*powf(p+this->_params.p1.data(0), 2));
        // case cppn::linear:
        //     return std::min(std::max(this->_params.p0.data(0)*p+this->_params.p1.data(0), -3.0), 3.0) / 3.0;
         // case cppn::cube:
@@ -223,6 +226,7 @@ public:
         for (size_t i = 0; i < nb_conns; ++i)
             _add_conn_nodup();
         this->simplify();
+        this->_init();
         this->set_all_biases(std::vector<double>(this->get_nb_neurons(),0));
     }
 
